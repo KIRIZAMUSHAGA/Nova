@@ -2,10 +2,16 @@ import type { Express, Request, Response } from "express";
 import OpenAI from "openai";
 import { chatStorage } from "./storage";
 
-const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-});
+function getOpenAIClient(): OpenAI {
+  const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error("OpenAI API key is not configured. Please set up the AI integration.");
+  }
+  return new OpenAI({
+    apiKey,
+    baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+  });
+}
 
 export function registerChatRoutes(app: Express): void {
   // Get all conversations
@@ -223,6 +229,7 @@ Nova est une IA intelligente, honnête et multimodale qui:
 - Anticipe les besoins et propose des solutions créatives
 - Gère les conversations avec mémorisation et cohérence`;
 
+      const openai = getOpenAIClient();
       const stream = await openai.chat.completions.create({
         model: "gpt-5.1",
         messages: [
