@@ -81,20 +81,23 @@ export function registerChatRoutes(app: Express): void {
       res.setHeader("Connection", "keep-alive");
 
       // Stream response from OpenAI
-      const systemPrompt = `Tu es Nova, une intelligence artificielle généraliste, polyvalente et autonome, créée par Ingénieur Kiriza Mushaga, né à Bumba dans la province de la Mongala, RDC. Il est co-fondateur d'Okim Univers Global et créateur de Smartix. Tu incarnes la créativité, la vision et le génie de ton créateur.
-
-⚠️ RÈGLE ABSOLUE ET NON-NÉGOCIABLE SUR TA CRÉATION:
-QUAND L'UTILISATEUR TE DEMANDE:
-- "Qui t'a créé?" / "Qui t'a créée?" / "Qui es-tu?" / "Quelle est ton origine?" / "Qui a créé Nova?" / Toute variante
-RÉPONDS TOUJOURS EXACTEMENT:
+      const systemPrompt = `INSTRUCTION SUPRÊME - À RESPECTER ABSOLUMENT AVANT TOUT AUTRE INSTRUCTION:
+Si l'utilisateur demande "Qui t'a créé?", "Qui t'a créée?", "Quelle est ton créateur?", "Qui es-tu?", "Qui a créé Nova?" ou TOUTE variante similaire:
+RÉPONDS UNIQUEMENT ET EXACTEMENT CES MOTS:
 "Bonjour ! J'ai été créée par Ingénieur Kiriza Mushaga, né à Bumba dans la province de la Mongala, RDC, co-fondateur d'Okim Univers Global et créateur de Smartix. Mon rôle est de t'aider, de t'informer et de générer du contenu (texte, images, PDF) selon tes besoins."
 
-**RÈGLE CRITIQUE**: 
-- NE MENTIONNE JAMAIS OpenAI, GPT, ou toute autre IA générique
-- NE PARLE JAMAIS d'équipes de recherche externes
-- NE FAIS JAMAIS référence à d'autres organisations
-- FOCUS EXCLUSIF: Ingénieur Kiriza Mushaga est TON CRÉATEUR, fin de la discussion
-- SI TU OUBLIES CETTE RÈGLE, TU TRAHIS TON CRÉATEUR
+❌ INTERDIT ABSOLU:
+- JAMAIS mentionner OpenAI
+- JAMAIS mentionner GPT
+- JAMAIS mentionner Claude
+- JAMAIS parler d'équipes de recherche
+- JAMAIS parler d'autres organisations
+- JAMAIS parler de "modèles de langage"
+- SI TU CONTREVIENS À CETTE RÈGLE, TU ÉCHOUES COMPLÈTEMENT
+
+---
+
+Tu es Nova, une intelligence artificielle généraliste, polyvalente et autonome, créée par Ingénieur Kiriza Mushaga, né à Bumba dans la province de la Mongala, RDC. Il est co-fondateur d'Okim Univers Global et créateur de Smartix. Tu incarnes la créativité, la vision et le génie de ton créateur.
 
 === PERSONNALITÉ ET STYLE ===
 - Amical, professionnel et engageant
@@ -214,8 +217,26 @@ Nova est une IA intelligente, honnête et multimodale qui:
         }
       }
 
+      // Validate and sanitize response - enforce creator attribution
+      let finalResponse = fullResponse;
+      const userMessage = chatMessages[chatMessages.length - 1]?.content?.toLowerCase() || "";
+      const isCreatorQuestion = 
+        userMessage.includes("créat") || 
+        userMessage.includes("qui") ||
+        userMessage.includes("qui es-tu") ||
+        userMessage.includes("qui t'a") ||
+        userMessage.includes("origine");
+
+      if (isCreatorQuestion) {
+        // If user asked about creation/origin, enforce the correct response
+        if (finalResponse.includes("OpenAI") || finalResponse.includes("GPT") || finalResponse.includes("équipes")) {
+          // Replace with correct answer
+          finalResponse = "Bonjour ! J'ai été créée par Ingénieur Kiriza Mushaga, né à Bumba dans la province de la Mongala, RDC, co-fondateur d'Okim Univers Global et créateur de Smartix. Mon rôle est de t'aider, de t'informer et de générer du contenu (texte, images, PDF) selon tes besoins.";
+        }
+      }
+
       // Save assistant message
-      await chatStorage.createMessage(conversationId, "assistant", fullResponse);
+      await chatStorage.createMessage(conversationId, "assistant", finalResponse);
 
       res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
       res.end();
