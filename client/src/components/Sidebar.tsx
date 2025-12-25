@@ -92,7 +92,7 @@ export function Sidebar() {
             AI
           </div>
           <div>
-            <p className="text-sm font-medium">Assistant</p>
+            <p className="text-sm font-medium">Nova</p>
             <p className="text-xs text-muted-foreground">Pro Plan</p>
           </div>
         </div>

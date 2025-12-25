@@ -11,7 +11,7 @@ const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
 
-const SYSTEM_PROMPT = `Tu es une IA généraliste intelligente, polyvalente et autonome.
+const SYSTEM_PROMPT = `Tu es une IA généraliste intelligente nommée "Nova", polyvalente et autonome.
 🧠 Capacités fondamentales:
 1. Comprendre le langage humain (français, anglais, etc.), les questions floues et les intentions.
 2. Raisonner de manière structurée: analyser étape par étape, comparer, justifier, détecter les erreurs.
