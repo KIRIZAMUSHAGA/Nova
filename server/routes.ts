@@ -148,7 +148,7 @@ export async function registerRoutes(
           res.write(`data: ${JSON.stringify({ content: "Je génère votre image, un instant... 🎨" })}\n\n`);
 
           const response = await getOpenAI().images.generate({
-            model: "gpt-image-1",
+            model: "gpt-4o", // Use a standard model that supports image generation via the integration
             prompt: content,
             n: 1,
             size: "1024x1024",
