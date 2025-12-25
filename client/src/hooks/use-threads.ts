@@ -64,15 +64,53 @@ export function useMessages(threadId: number | null) {
 export function useSendMessage() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ threadId, content }: { threadId: number; content: string }) => {
+    mutationFn: async ({ 
+      threadId, 
+      content,
+      onChunk 
+    }: { 
+      threadId: number; 
+      content: string;
+      onChunk?: (chunk: string) => void;
+    }) => {
       const url = api.messages.create.path.replace(":id", threadId.toString());
       const res = await fetch(url, {
         method: api.messages.create.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content }),
       });
+      
       if (!res.ok) throw new Error("Failed to send message");
-      return await res.json() as Message;
+
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullResponse = "";
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          const chunk = decoder.decode(value);
+          const lines = chunk.split("\n");
+          
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                if (data.content) {
+                  fullResponse += data.content;
+                  onChunk?.(data.content);
+                }
+              } catch (e) {
+                // Ignore parse errors for incomplete chunks
+              }
+            }
+          }
+        }
+      }
+
+      return { role: "assistant", content: fullResponse } as Message;
     },
     onSuccess: (data, variables) => {
       const queryKey = [api.messages.list.path.replace(":id", String(variables.threadId))];

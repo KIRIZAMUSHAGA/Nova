@@ -13,6 +13,7 @@ export default function ThreadPage() {
   const params = useParams();
   const threadId = params.id ? parseInt(params.id) : null;
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [streamingMessage, setStreamingMessage] = useState<string | null>(null);
 
   const { data: thread, isLoading: isLoadingThread, error: threadError } = useThread(threadId);
   const { data: messages = [], isLoading: isLoadingMessages } = useMessages(threadId);
@@ -20,10 +21,17 @@ export default function ThreadPage() {
 
   const handleSend = async (content: string) => {
     if (!threadId) return;
+    setStreamingMessage("");
     try {
-      await sendMessage.mutateAsync({ threadId, content });
+      await sendMessage.mutateAsync({ 
+        threadId, 
+        content,
+        onChunk: (chunk) => setStreamingMessage(prev => (prev || "") + chunk)
+      });
     } catch (error) {
       console.error("Failed to send message", error);
+    } finally {
+      setStreamingMessage(null);
     }
   };
 
@@ -91,7 +99,11 @@ export default function ThreadPage() {
         </header>
 
         {/* Messages */}
-        <MessageList messages={messages} isLoading={isThinking} />
+        <MessageList 
+          messages={messages} 
+          isLoading={isThinking} 
+          streamingMessage={streamingMessage} 
+        />
 
         {/* Input */}
         <ChatInput 
