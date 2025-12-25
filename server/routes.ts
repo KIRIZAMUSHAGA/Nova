@@ -156,37 +156,38 @@ export async function registerRoutes(
         })();
       }
 
-      // 4. Call OpenAI
-      // Streaming would be ideal, but for MVP we'll do blocking request first or setup streaming logic
-      // For simplicity in this step, we'll do a simple response.
-      const completion = await getOpenAI().chat.completions.create({
+      // 4. Call OpenAI with streaming
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      const stream = await getOpenAI().chat.completions.create({
         model: "gpt-4o",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           ...conversation
         ],
+        stream: true,
       });
 
-      const aiContent = completion.choices[0].message.content || "Je n'ai pas pu générer de réponse.";
+      let aiContent = "";
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content || "";
+        if (content) {
+          aiContent += content;
+          res.write(`data: ${JSON.stringify({ content })}\n\n`);
+        }
+      }
 
       // 5. Save AI message
-      const aiMessage = await storage.createMessage({
+      await storage.createMessage({
         threadId,
         role: "assistant",
         content: aiContent,
       });
 
-      // Return the AI message (or user message + trigger reload, but returning AI message is better for UI response if blocking)
-      // The frontend probably expects the created message (user's), but ideally we want to show the AI response too.
-      // Let's stick to the route contract: it creates a message (the user's). 
-      // The UI should then poll or we return both? 
-      // Actually, standard REST is return the created resource.
-      // But we also created an AI message side-effect.
-      // Let's return the user message, and let the UI fetch the list again or use a specialized response.
-      // Or, better, return the AI message as well?
-      // For strict REST, we return the user message. 
-      
-      res.status(201).json(userMessage);
+      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+      res.end();
 
     } catch (err) {
       console.error(err);
