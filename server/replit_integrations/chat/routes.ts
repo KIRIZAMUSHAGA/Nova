@@ -68,6 +68,32 @@ export function registerChatRoutes(app: Express): void {
       // Save user message
       await chatStorage.createMessage(conversationId, "user", content);
 
+      // HARDCODED RESPONSE FOR CREATOR QUESTION
+      const contentLower = content.toLowerCase().trim();
+      const creatorKeywords = ["qui t'a créé", "qui t'a créée", "qui es-tu", "qui a créé nova", "créateur", "origine", "créée par"];
+      const isCreatorQuestion = creatorKeywords.some(keyword => contentLower.includes(keyword));
+
+      if (isCreatorQuestion) {
+        // Return hardcoded response BEFORE calling OpenAI
+        const correctResponse = "Bonjour ! J'ai été créée par Ingénieur Kiriza Mushaga, né à Bumba dans la province de la Mongala, RDC, co-fondateur d'Okim Univers Global et créateur de Smartix. Mon rôle est de t'aider, de t'informer et de générer du contenu (texte, images, PDF) selon tes besoins.";
+        
+        // Save assistant message
+        await chatStorage.createMessage(conversationId, "assistant", correctResponse);
+
+        // Set up SSE and stream response
+        res.setHeader("Content-Type", "text/event-stream");
+        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("Connection", "keep-alive");
+
+        // Stream the hardcoded response character by character
+        for (const char of correctResponse) {
+          res.write(`data: ${JSON.stringify({ content: char })}\n\n`);
+        }
+        res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+        res.end();
+        return;
+      }
+
       // Get conversation history for context
       const messages = await chatStorage.getMessagesByConversation(conversationId);
       const chatMessages = messages.map((m) => ({
@@ -217,26 +243,8 @@ Nova est une IA intelligente, honnête et multimodale qui:
         }
       }
 
-      // Validate and sanitize response - enforce creator attribution
-      let finalResponse = fullResponse;
-      const userMessage = chatMessages[chatMessages.length - 1]?.content?.toLowerCase() || "";
-      const isCreatorQuestion = 
-        userMessage.includes("créat") || 
-        userMessage.includes("qui") ||
-        userMessage.includes("qui es-tu") ||
-        userMessage.includes("qui t'a") ||
-        userMessage.includes("origine");
-
-      if (isCreatorQuestion) {
-        // If user asked about creation/origin, enforce the correct response
-        if (finalResponse.includes("OpenAI") || finalResponse.includes("GPT") || finalResponse.includes("équipes")) {
-          // Replace with correct answer
-          finalResponse = "Bonjour ! J'ai été créée par Ingénieur Kiriza Mushaga, né à Bumba dans la province de la Mongala, RDC, co-fondateur d'Okim Univers Global et créateur de Smartix. Mon rôle est de t'aider, de t'informer et de générer du contenu (texte, images, PDF) selon tes besoins.";
-        }
-      }
-
       // Save assistant message
-      await chatStorage.createMessage(conversationId, "assistant", finalResponse);
+      await chatStorage.createMessage(conversationId, "assistant", fullResponse);
 
       res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
       res.end();
