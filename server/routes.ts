@@ -47,8 +47,13 @@ export async function registerRoutes(
 ): Promise<Server> {
 
   app.post(api.threads.create.path, async (req, res) => {
-    const thread = await storage.createThread({});
-    res.status(201).json(thread);
+    try {
+      const thread = await storage.createThread({});
+      res.status(201).json(thread);
+    } catch (error) {
+      console.error("Error creating thread:", error);
+      res.status(500).json({ message: "Failed to create thread" });
+    }
   });
 
   app.get(api.threads.list.path, async (req, res) => {
