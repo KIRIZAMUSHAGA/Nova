@@ -5,11 +5,17 @@ import { api } from "@shared/routes";
 import { z } from "zod";
 import OpenAI from "openai";
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-});
+// Lazy initialization of OpenAI client
+let openai: OpenAI | null = null;
+function getOpenAI(): OpenAI {
+  if (!openai) {
+    openai = new OpenAI({
+      apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+      baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+    });
+  }
+  return openai;
+}
 
 const SYSTEM_PROMPT = `Tu es une IA généraliste intelligente nommée "Nova", polyvalente et autonome.
 🧠 Capacités fondamentales:
@@ -133,7 +139,7 @@ export async function registerRoutes(
         // Run this in background or fire-and-forget to not block
         (async () => {
           try {
-            const titleResponse = await openai.chat.completions.create({
+            const titleResponse = await getOpenAI().chat.completions.create({
               model: "gpt-4o",
               messages: [
                 { role: "system", content: "Summarize the following message into a short, concise title (max 5 words) for a chat conversation. Return ONLY the title." },
@@ -153,7 +159,7 @@ export async function registerRoutes(
       // 4. Call OpenAI
       // Streaming would be ideal, but for MVP we'll do blocking request first or setup streaming logic
       // For simplicity in this step, we'll do a simple response.
-      const completion = await openai.chat.completions.create({
+      const completion = await getOpenAI().chat.completions.create({
         model: "gpt-4o",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
