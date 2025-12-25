@@ -57,6 +57,9 @@ export default function ThreadPage() {
 
       {/* Mobile Sidebar */}
       <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+        <SheetTrigger asChild>
+          <div />
+        </SheetTrigger>
         <SheetContent side="left" className="p-0 w-80 bg-background border-r border-border">
           <Sidebar />
         </SheetContent>
@@ -67,11 +70,9 @@ export default function ThreadPage() {
         {/* Header */}
         <header className="h-16 flex items-center px-4 border-b border-border/50 bg-background/50 backdrop-blur-md sticky top-0 z-10">
           <div className="md:hidden mr-2">
-            <SheetTrigger asChild onClick={() => setIsSidebarOpen(true)}>
-              <Button variant="ghost" size="icon" className="hover:bg-muted/50">
-                <Menu className="w-5 h-5" />
-              </Button>
-            </SheetTrigger>
+            <Button variant="ghost" size="icon" className="hover:bg-muted/50" onClick={() => setIsSidebarOpen(true)}>
+              <Menu className="w-5 h-5" />
+            </Button>
           </div>
           
           <div className="flex-1 min-w-0">

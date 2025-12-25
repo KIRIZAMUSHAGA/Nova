@@ -25,7 +25,7 @@ export function Sidebar() {
     : null;
 
   return (
-    <div className="w-80 border-r border-border bg-card/30 backdrop-blur-sm flex flex-col h-full hidden md:flex">
+    <div className="w-80 border-r border-border bg-card/30 backdrop-blur-sm flex flex-col h-full">
       <div className="p-4 border-b border-border/50">
         <Button 
           onClick={handleNewChat} 
