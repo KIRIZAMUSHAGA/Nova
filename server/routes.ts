@@ -134,6 +134,48 @@ export async function registerRoutes(
         content: m.content
       }));
 
+      // ✅ IMAGE GENERATION DETECTION
+      const imageKeywords = ["génère une image", "crée une image", "dessine", "fais un dessin", "generate an image", "create an image", "draw"];
+      const isImageRequest = imageKeywords.some(keyword => contentLower.includes(keyword));
+
+      if (isImageRequest) {
+        try {
+          // Send a "thinking" message via SSE first
+          res.setHeader("Content-Type", "text/event-stream");
+          res.setHeader("Cache-Control", "no-cache");
+          res.setHeader("Connection", "keep-alive");
+          res.write(`data: ${JSON.stringify({ content: "Je génère votre image, un instant... 🎨" })}\n\n`);
+
+          const response = await getOpenAI().images.generate({
+            model: "gpt-image-1",
+            prompt: content,
+            n: 1,
+            size: "1024x1024",
+            response_format: "b64_json",
+          });
+
+          const base64 = response.data[0]?.b64_json;
+          if (base64) {
+            const imageUrl = `data:image/png;base64,${base64}`;
+            const aiContent = `Voici l'image que j'ai générée pour vous :\n\n![Générée](${imageUrl})`;
+            
+            await storage.createMessage({
+              threadId,
+              role: "assistant",
+              content: aiContent,
+            });
+
+            res.write(`data: ${JSON.stringify({ content: aiContent.replace("Je génère votre image, un instant... 🎨", "") })}\n\n`);
+            res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+            res.end();
+            return;
+          }
+        } catch (imageError) {
+          console.error("Image generation failed:", imageError);
+          // Fallback to normal chat if image gen fails
+        }
+      }
+
       // 3. Generate Title if it's the first message
       if (history.length <= 1) {
         // Run this in background or fire-and-forget to not block
