@@ -152,12 +152,10 @@ export async function registerRoutes(
             prompt: content,
             n: 1,
             size: "1024x1024",
-            response_format: "b64_json",
           });
 
-          const base64 = response.data?.[0]?.b64_json;
-          if (base64) {
-            const imageUrl = `data:image/png;base64,${base64}`;
+          const imageUrl = response.data?.[0]?.url;
+          if (imageUrl) {
             const aiContent = `Voici l'image que j'ai générée pour vous :\n\n![Générée](${imageUrl})`;
             
             await storage.createMessage({
@@ -175,7 +173,12 @@ export async function registerRoutes(
           }
         } catch (imageError) {
           console.error("Image generation failed:", imageError);
-          // Fallback will happen below
+          // If headers weren't sent yet, we can't do SSE, but here they ARE sent
+          // We should ideally send an error message via SSE
+          res.write(`data: ${JSON.stringify({ content: "Désolé, je n'ai pas pu générer l'image pour le moment. 😕" })}\n\n`);
+          res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+          res.end();
+          return;
         }
       }
 
