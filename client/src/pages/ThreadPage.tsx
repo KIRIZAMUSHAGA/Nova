@@ -1,0 +1,102 @@
+import { useParams } from "wouter";
+import { Sidebar } from "@/components/Sidebar";
+import { MessageList } from "@/components/MessageList";
+import { ChatInput } from "@/components/ChatInput";
+import { useThread, useMessages, useSendMessage } from "@/hooks/use-threads";
+import { Menu, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useState } from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+export default function ThreadPage() {
+  const params = useParams();
+  const threadId = params.id ? parseInt(params.id) : null;
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const { data: thread, isLoading: isLoadingThread, error: threadError } = useThread(threadId);
+  const { data: messages = [], isLoading: isLoadingMessages } = useMessages(threadId);
+  const sendMessage = useSendMessage();
+
+  const handleSend = async (content: string) => {
+    if (!threadId) return;
+    try {
+      await sendMessage.mutateAsync({ threadId, content });
+    } catch (error) {
+      console.error("Failed to send message", error);
+    }
+  };
+
+  const isThinking = sendMessage.isPending;
+
+  if (threadError) {
+    return (
+      <div className="flex h-screen bg-background items-center justify-center p-4">
+        <Alert variant="destructive" className="max-w-md">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            Failed to load this conversation. It might have been deleted or doesn't exist.
+          </AlertDescription>
+          <Button 
+            className="mt-4 w-full" 
+            variant="outline" 
+            onClick={() => window.location.href = "/"}
+          >
+            Go Back Home
+          </Button>
+        </Alert>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-background text-foreground font-sans selection:bg-primary/20">
+      {/* Desktop Sidebar */}
+      <Sidebar />
+
+      {/* Mobile Sidebar */}
+      <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+        <SheetContent side="left" className="p-0 w-80 bg-background border-r border-border">
+          <Sidebar />
+        </SheetContent>
+      </Sheet>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col h-full relative">
+        {/* Header */}
+        <header className="h-16 flex items-center px-4 border-b border-border/50 bg-background/50 backdrop-blur-md sticky top-0 z-10">
+          <div className="md:hidden mr-2">
+            <SheetTrigger asChild onClick={() => setIsSidebarOpen(true)}>
+              <Button variant="ghost" size="icon" className="hover:bg-muted/50">
+                <Menu className="w-5 h-5" />
+              </Button>
+            </SheetTrigger>
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg font-display font-semibold truncate flex items-center gap-2">
+              {isLoadingThread ? (
+                <div className="h-5 w-32 bg-muted/40 animate-pulse rounded" />
+              ) : (
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">
+                  {thread?.title || "New Conversation"}
+                </span>
+              )}
+            </h1>
+          </div>
+        </header>
+
+        {/* Messages */}
+        <MessageList messages={messages} isLoading={isThinking} />
+
+        {/* Input */}
+        <ChatInput 
+          onSend={handleSend} 
+          disabled={isThinking || !threadId} 
+          placeholder={threadId ? "Ask anything..." : "Select or create a chat to start"}
+        />
+      </div>
+    </div>
+  );
+}
