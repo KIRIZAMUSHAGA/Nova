@@ -53,7 +53,9 @@ export default function ThreadPage() {
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground font-sans selection:bg-primary/20">
       {/* Desktop Sidebar */}
-      <Sidebar />
+      <div className="hidden md:block h-full">
+        <Sidebar />
+      </div>
 
       {/* Mobile Sidebar */}
       <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
@@ -69,7 +71,7 @@ export default function ThreadPage() {
       <div className="flex-1 flex flex-col h-full relative">
         {/* Header */}
         <header className="h-16 flex items-center px-4 border-b border-border/50 bg-background/50 backdrop-blur-md sticky top-0 z-10">
-          <div className="md:hidden mr-2">
+          <div className="mr-2">
             <Button variant="ghost" size="icon" className="hover:bg-muted/50" onClick={() => setIsSidebarOpen(true)}>
               <Menu className="w-5 h-5" />
             </Button>

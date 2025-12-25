@@ -23,7 +23,9 @@ export default function HomePage() {
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground font-sans">
       {/* Desktop Sidebar */}
-      <Sidebar />
+      <div className="hidden md:block h-full">
+        <Sidebar />
+      </div>
 
       {/* Mobile Sidebar */}
       <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
@@ -39,7 +41,7 @@ export default function HomePage() {
       <div className="flex-1 flex flex-col h-full relative overflow-hidden">
         {/* Header */}
         <header className="absolute top-0 left-0 right-0 h-16 flex items-center px-4 z-10">
-          <div className="md:hidden mr-2">
+          <div className="mr-2">
             <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(true)}>
               <Menu className="w-5 h-5" />
             </Button>
