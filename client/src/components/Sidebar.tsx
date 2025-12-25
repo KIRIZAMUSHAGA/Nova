@@ -2,14 +2,31 @@ import { Link, useLocation } from "wouter";
 import { useThreads, useCreateThread } from "@/hooks/use-threads";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, MessageSquare, Box } from "lucide-react";
+import { 
+  Plus, 
+  MessageSquare, 
+  Box, 
+  Sparkles, 
+  FileText, 
+  Image as ImageIcon, 
+  Globe, 
+  Settings, 
+  Info, 
+  User as UserIcon, 
+  Rocket, 
+  ChevronDown, 
+  ChevronRight 
+} from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function Sidebar() {
   const [location, setLocation] = useLocation();
   const { data: threads, isLoading } = useThreads();
   const createThread = useCreateThread();
+  const [isChatsExpanded, setIsChatsExpanded] = useState(true);
 
   const handleNewChat = async () => {
     try {
@@ -25,77 +42,139 @@ export function Sidebar() {
     : null;
 
   return (
-    <div className="w-80 border-r border-border bg-card/30 backdrop-blur-sm flex flex-col h-full">
-      <div className="p-4 border-b border-border/50">
-        <Button 
-          onClick={handleNewChat} 
-          disabled={createThread.isPending}
-          className="w-full justify-start gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-        >
-          <Plus className="w-5 h-5" />
-          {createThread.isPending ? "Creating..." : "New Chat"}
-        </Button>
+    <div className="w-80 border-r border-border bg-card/30 backdrop-blur-md flex flex-col h-full overflow-hidden">
+      {/* SECTION 1 — En-tête Nova */}
+      <div className="p-6 border-b border-border/50 relative group cursor-pointer hover:bg-white/5 transition-colors" onClick={() => setLocation("/about")}>
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center text-white shadow-xl shadow-primary/20 group-hover:scale-105 transition-transform duration-300">
+              <Sparkles className="w-8 h-8" />
+            </div>
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-background rounded-full shadow-lg" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl font-display font-bold tracking-tight">Nova AI</h2>
+            <p className="text-xs text-muted-foreground font-medium truncate">Assistant Intelligent</p>
+            <p className="text-[10px] text-primary/70 font-bold uppercase tracking-wider mt-0.5">Par Kiriza Mushaga</p>
+          </div>
+        </div>
       </div>
 
-      <ScrollArea className="flex-1 px-3 py-4">
-        <div className="space-y-1">
-          <h4 className="px-2 mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Recent Chats</h4>
-          
-          {isLoading ? (
-            <div className="space-y-2 px-2">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-12 rounded-lg bg-muted/40 animate-pulse" />
-              ))}
+      <ScrollArea className="flex-1">
+        <div className="p-4 space-y-6">
+          {/* SECTION 2 — Actions principales */}
+          <div className="space-y-2">
+            <Button 
+              onClick={handleNewChat} 
+              disabled={createThread.isPending}
+              className="w-full justify-start gap-3 h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:translate-y-[-2px] active:translate-y-0"
+            >
+              <Plus className="w-5 h-5" />
+              <span className="font-semibold">{createThread.isPending ? "Initialisation..." : "Nouvelle conversation"}</span>
+            </Button>
+
+            <div className="grid grid-cols-2 gap-2 pt-2">
+              <Button variant="outline" size="sm" className="justify-start gap-2 h-10 rounded-lg text-xs font-medium border-white/5 hover:bg-white/5">
+                <FileText className="w-4 h-4 text-orange-400" />
+                Générer PDF
+              </Button>
+              <Button variant="outline" size="sm" className="justify-start gap-2 h-10 rounded-lg text-xs font-medium border-white/5 hover:bg-white/5">
+                <ImageIcon className="w-4 h-4 text-pink-400" />
+                Créer Image
+              </Button>
+              <Button variant="outline" size="sm" className="justify-start gap-2 h-10 rounded-lg text-xs font-medium border-white/5 hover:bg-white/5">
+                <Globe className="w-4 h-4 text-blue-400" />
+                Recherche Web
+              </Button>
+              <Button variant="outline" size="sm" className="justify-start gap-2 h-10 rounded-lg text-xs font-medium border-white/5 hover:bg-white/5">
+                <Sparkles className="w-4 h-4 text-purple-400" />
+                Capacités
+              </Button>
             </div>
-          ) : threads?.length === 0 ? (
-            <div className="text-center py-8 px-4 text-muted-foreground text-sm">
-              <Box className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p>No chats yet.</p>
-              <p className="text-xs mt-1 opacity-70">Start a new conversation!</p>
-            </div>
-          ) : (
-            threads?.map((thread) => (
-              <Link 
-                key={thread.id} 
-                href={`/thread/${thread.id}`}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-3 rounded-xl text-sm transition-all duration-200 group relative overflow-hidden",
-                  currentThreadId === thread.id
-                    ? "bg-secondary text-foreground shadow-md border border-white/5" 
-                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                )}
-              >
-                {currentThreadId === thread.id && (
-                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-xl" />
-                )}
-                <MessageSquare className={cn(
-                  "w-4 h-4 transition-colors",
-                  currentThreadId === thread.id ? "text-primary" : "text-muted-foreground/70 group-hover:text-primary/70"
-                )} />
-                <div className="flex-1 overflow-hidden">
-                  <p className="truncate font-medium">
-                    {thread.title || `Chat #${thread.id}`}
-                  </p>
-                  <p className="text-xs opacity-60 truncate">
-                    {thread.createdAt ? formatDistanceToNow(new Date(thread.createdAt), { addSuffix: true }) : 'Just now'}
-                  </p>
-                </div>
-              </Link>
-            ))
-          )}
+          </div>
+
+          {/* SECTION 3 — Conversations récentes */}
+          <div className="space-y-2">
+            <button 
+              onClick={() => setIsChatsExpanded(!isChatsExpanded)}
+              className="w-full flex items-center justify-between px-2 py-1 text-xs font-bold text-muted-foreground uppercase tracking-widest hover:text-foreground transition-colors group"
+            >
+              <span className="flex items-center gap-2">
+                <MessageSquare className="w-3.5 h-3.5" />
+                Récents
+              </span>
+              {isChatsExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            </button>
+            
+            <AnimatePresence>
+              {isChatsExpanded && (
+                <motion.div 
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="space-y-1 overflow-hidden"
+                >
+                  {isLoading ? (
+                    <div className="space-y-2 px-2 py-2">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="h-10 rounded-lg bg-muted/20 animate-pulse" />
+                      ))}
+                    </div>
+                  ) : threads?.length === 0 ? (
+                    <div className="text-center py-6 px-4 text-muted-foreground/50 italic text-xs">
+                      Aucun chat récent
+                    </div>
+                  ) : (
+                    threads?.map((thread) => (
+                      <Link 
+                        key={thread.id} 
+                        href={`/thread/${thread.id}`}
+                        className={cn(
+                          "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200 group relative overflow-hidden",
+                          currentThreadId === thread.id
+                            ? "bg-primary/10 text-primary border border-primary/20" 
+                            : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                        )}
+                      >
+                        <MessageSquare className={cn(
+                          "w-4 h-4 shrink-0",
+                          currentThreadId === thread.id ? "text-primary" : "text-muted-foreground/50 group-hover:text-primary/50"
+                        )} />
+                        <div className="flex-1 overflow-hidden">
+                          <p className="truncate font-medium">{thread.title || `Chat #${thread.id}`}</p>
+                        </div>
+                      </Link>
+                    ))
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </ScrollArea>
 
-      <div className="p-4 border-t border-border/50 bg-background/50 backdrop-blur-md">
-        <div className="flex items-center gap-3 px-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-accent flex items-center justify-center text-white font-bold text-xs shadow-lg shadow-primary/20">
-            AI
-          </div>
-          <div>
-            <p className="text-sm font-medium">Nova</p>
-            <p className="text-xs text-muted-foreground">Pro Plan</p>
-          </div>
-        </div>
+      {/* SECTION 4 — Paramètres & identité */}
+      <div className="p-4 bg-background/40 backdrop-blur-xl border-t border-border/50 space-y-1">
+        <Button variant="ghost" className="w-full justify-start gap-3 h-10 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 px-3">
+          <Settings className="w-4 h-4" />
+          Paramètres
+        </Button>
+        <Button 
+          variant="ghost" 
+          onClick={() => setLocation("/about")}
+          className="w-full justify-start gap-3 h-10 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 px-3"
+        >
+          <Info className="w-4 h-4" />
+          À propos de Nova
+        </Button>
+        <Button variant="ghost" className="w-full justify-start gap-3 h-10 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 px-3">
+          <UserIcon className="w-4 h-4" />
+          Le Créateur
+        </Button>
+        <Button variant="ghost" className="w-full justify-start gap-3 h-10 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 px-3">
+          <Rocket className="w-4 h-4" />
+          Vision & Futur
+        </Button>
       </div>
     </div>
   );
