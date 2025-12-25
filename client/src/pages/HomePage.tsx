@@ -27,6 +27,9 @@ export default function HomePage() {
 
       {/* Mobile Sidebar */}
       <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+        <SheetTrigger asChild>
+          <div />
+        </SheetTrigger>
         <SheetContent side="left" className="p-0 w-80 bg-background border-r border-border">
           <Sidebar />
         </SheetContent>
@@ -37,11 +40,9 @@ export default function HomePage() {
         {/* Header */}
         <header className="absolute top-0 left-0 right-0 h-16 flex items-center px-4 z-10">
           <div className="md:hidden mr-2">
-            <SheetTrigger asChild onClick={() => setIsSidebarOpen(true)}>
-              <Button variant="ghost" size="icon">
-                <Menu className="w-5 h-5" />
-              </Button>
-            </SheetTrigger>
+            <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(true)}>
+              <Menu className="w-5 h-5" />
+            </Button>
           </div>
         </header>
 
