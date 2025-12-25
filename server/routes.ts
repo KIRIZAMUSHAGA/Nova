@@ -73,6 +73,54 @@ export async function registerRoutes(
         content,
       });
 
+      // ✅ HARDCODED RESPONSE FOR CREATOR QUESTION (INTERCEPT BEFORE OPENAI)
+      const contentLower = content.toLowerCase().trim();
+      const creatorKeywords = [
+        "qui t'a créé",
+        "qui t'as créé",
+        "qui t'a créée",
+        "qui t'as créée",
+        "qui es-tu",
+        "qui es-tu nova",
+        "qui a créé nova",
+        "qui t'a fait",
+        "qui t'as fait",
+        "créateur",
+        "créatrice",
+        "mon créateur",
+        "mon créatrice",
+        "ta création",
+        "ton créateur",
+        "ta création",
+        "qui m'a créé",
+        "qui t'a développée",
+        "qui t'as développée",
+        "qui t'a conçue",
+        "qui t'as conçue",
+        "qui es-tu vraiment",
+        "quelle est ton origine",
+        "quelle est ta création",
+        "kiriza mushaga"
+      ];
+
+      const isCreatorQuestion = creatorKeywords.some(keyword => contentLower.includes(keyword));
+
+      if (isCreatorQuestion) {
+        // HARDCODED CORRECT RESPONSE - BEFORE CALLING OPENAI
+        const correctResponse = "Bonjour ! J'ai été créée par Ingénieur Kiriza Mushaga, né à Bumba dans la province de la Mongala, RDC, co-fondateur d'Okim Univers Global et créateur de Smartix. Mon rôle est de t'aider, de t'informer et de générer du contenu (texte, images, PDF) selon tes besoins. Je suis optimisée pour offrir des réponses pertinentes, rapides et intelligentes.";
+
+        // Save the correct AI response
+        const aiMessage = await storage.createMessage({
+          threadId,
+          role: "assistant",
+          content: correctResponse,
+        });
+
+        // Return the user message (standard REST)
+        res.status(201).json(userMessage);
+        return;
+      }
+
       // 2. Get history for context
       const history = await storage.getMessages(threadId);
       const conversation = history.map(m => ({
