@@ -2,6 +2,8 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { registerChatRoutes } from "./replit_integrations/chat";
+import { registerImageRoutes } from "./replit_integrations/image";
 
 const app = express();
 const httpServer = createServer(app);
@@ -60,6 +62,10 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Register AI integration routes (chat with streaming, image generation)
+  registerChatRoutes(app);
+  registerImageRoutes(app);
+  
   await registerRoutes(httpServer, app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
