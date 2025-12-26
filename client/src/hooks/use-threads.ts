@@ -2,9 +2,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@shared/routes";
 import { type Thread, type Message } from "@shared/schema";
 
-// Helper to build URLs since frontend can't import the buildUrl function directly if it wasn't exported
-// But instructions said import EXACT types. Assuming api object structure from context.
-
 export function useThreads() {
   return useQuery({
     queryKey: [api.threads.list.path],
@@ -16,13 +13,13 @@ export function useThreads() {
   });
 }
 
-export function useThread(id: number | null) {
+export function useThread(id: string | null) {
   return useQuery({
     queryKey: [api.threads.get.path, id],
     enabled: !!id,
     queryFn: async () => {
       if (!id) return null;
-      const url = api.threads.get.path.replace(":id", id.toString());
+      const url = api.threads.get.path.replace(":id", id);
       const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to fetch thread");
       return await res.json() as Thread;
@@ -46,14 +43,14 @@ export function useCreateThread() {
   });
 }
 
-export function useMessages(threadId: number | null) {
+export function useMessages(threadId: string | null) {
   return useQuery({
-    queryKey: [api.messages.list.path.replace(":id", String(threadId || 0))], // Unique key per thread
+    queryKey: [api.messages.list.path, threadId], 
     enabled: !!threadId,
-    refetchInterval: 3000, // Poll for new messages every 3s
+    refetchInterval: 3000, 
     queryFn: async () => {
       if (!threadId) return [];
-      const url = api.messages.list.path.replace(":id", threadId.toString());
+      const url = api.messages.list.path.replace(":id", threadId);
       const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to fetch messages");
       return await res.json() as Message[];
@@ -69,11 +66,11 @@ export function useSendMessage() {
       content,
       onChunk 
     }: { 
-      threadId: number; 
+      threadId: string; 
       content: string;
       onChunk?: (chunk: string) => void;
     }) => {
-      const url = api.messages.create.path.replace(":id", threadId.toString());
+      const url = api.messages.create.path.replace(":id", threadId);
       const res = await fetch(url, {
         method: api.messages.create.method,
         headers: { "Content-Type": "application/json" },
@@ -102,9 +99,7 @@ export function useSendMessage() {
                   fullResponse += data.content;
                   onChunk?.(data.content);
                 }
-              } catch (e) {
-                // Ignore parse errors for incomplete chunks
-              }
+              } catch (e) {}
             }
           }
         }
@@ -113,7 +108,7 @@ export function useSendMessage() {
       return { role: "assistant", content: fullResponse } as Message;
     },
     onSuccess: (data, variables) => {
-      const queryKey = [api.messages.list.path.replace(":id", String(variables.threadId))];
+      const queryKey = [api.messages.list.path, variables.threadId];
       queryClient.invalidateQueries({ queryKey });
     },
   });

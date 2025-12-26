@@ -15,8 +15,8 @@ export default function ThreadPage() {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   const [streamingMessage, setStreamingMessage] = React.useState<string | null>(null);
 
-  const { data: thread, isLoading: isLoadingThread, error: threadError } = useThread(threadId as any);
-  const { data: messages = [], isLoading: isLoadingMessages } = useMessages(threadId as any);
+  const { data: thread, isLoading: isLoadingThread, error: threadError } = useThread(threadId);
+  const { data: messages = [], isLoading: isLoadingMessages } = useMessages(threadId);
   const sendMessage = useSendMessage();
 
   const handleSend = async (content: string) => {
@@ -24,7 +24,7 @@ export default function ThreadPage() {
     setStreamingMessage("");
     try {
       await sendMessage.mutateAsync({ 
-        threadId: threadId as any, 
+        threadId, 
         content,
         onChunk: (chunk) => setStreamingMessage(prev => (prev || "") + chunk)
       });
@@ -60,12 +60,10 @@ export default function ThreadPage() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground font-sans selection:bg-primary/20">
-      {/* Desktop Sidebar */}
       <div className="hidden md:block h-full">
         <Sidebar />
       </div>
 
-      {/* Mobile Sidebar */}
       <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
         <SheetTrigger asChild>
           <div />
@@ -75,9 +73,7 @@ export default function ThreadPage() {
         </SheetContent>
       </Sheet>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col h-full relative">
-        {/* Header */}
         <header className="h-16 flex items-center px-4 border-b border-border/50 bg-background/50 backdrop-blur-md sticky top-0 z-10">
           <div className="mr-2">
             <Button variant="ghost" size="icon" className="hover:bg-muted/50" onClick={() => setIsSidebarOpen(true)}>
@@ -98,14 +94,12 @@ export default function ThreadPage() {
           </div>
         </header>
 
-        {/* Messages */}
         <MessageList 
           messages={messages} 
           isLoading={isThinking} 
           streamingMessage={streamingMessage} 
         />
 
-        {/* Input */}
         <ChatInput 
           onSend={handleSend} 
           disabled={isThinking || !threadId} 

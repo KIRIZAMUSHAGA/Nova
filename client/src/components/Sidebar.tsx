@@ -38,7 +38,7 @@ export function Sidebar() {
   };
 
   const currentThreadId = location.startsWith("/thread/") 
-    ? location.split("/")[2] 
+    ? location.split("/")[2]
     : null;
 
   return (
