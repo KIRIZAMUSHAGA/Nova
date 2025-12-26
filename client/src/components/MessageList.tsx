@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import * as React from "react";
 import { Message } from "@shared/schema";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ReactMarkdown from "react-markdown";
@@ -13,11 +13,11 @@ interface MessageListProps {
 }
 
 export function MessageList({ messages, isLoading, streamingMessage }: MessageListProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+  const bottomRef = React.useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom on new messages or streaming updates
-  useEffect(() => {
+  React.useEffect(() => {
     if (bottomRef.current) {
       bottomRef.current.scrollIntoView({ behavior: "smooth" });
     }

@@ -1,13 +1,13 @@
+import * as React from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, Sparkles, Zap, Shield, MessageSquare } from "lucide-react";
-import { useState } from "react";
 import { useCreateThread } from "@/hooks/use-threads";
 import { useLocation } from "wouter";
 
 export default function HomePage() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   const createThread = useCreateThread();
   const [, setLocation] = useLocation();
 

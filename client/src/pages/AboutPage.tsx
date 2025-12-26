@@ -1,3 +1,4 @@
+import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Sparkles, ArrowLeft, Globe, MapPin, Rocket, Shield, Heart, User as UserIcon } from "lucide-react";
 import { useLocation } from "wouter";

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, Sparkles } from "lucide-react";
@@ -11,11 +11,11 @@ interface ChatInputProps {
 }
 
 export function ChatInput({ onSend, disabled, placeholder = "Ask anything..." }: ChatInputProps) {
-  const [input, setInput] = useState("");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [input, setInput] = React.useState("");
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
   // Auto-resize textarea
-  useEffect(() => {
+  React.useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;

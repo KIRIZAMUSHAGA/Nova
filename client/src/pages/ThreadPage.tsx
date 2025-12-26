@@ -1,3 +1,4 @@
+import * as React from "react";
 import { useParams } from "wouter";
 import { Sidebar } from "@/components/Sidebar";
 import { MessageList } from "@/components/MessageList";
@@ -6,14 +7,13 @@ import { useThread, useMessages, useSendMessage } from "@/hooks/use-threads";
 import { Menu, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function ThreadPage() {
   const params = useParams();
-  const threadId = params.id ? parseInt(params.id) : null;
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [streamingMessage, setStreamingMessage] = useState<string | null>(null);
+  const threadId = params.id || null;
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+  const [streamingMessage, setStreamingMessage] = React.useState<string | null>(null);
 
   const { data: thread, isLoading: isLoadingThread, error: threadError } = useThread(threadId);
   const { data: messages = [], isLoading: isLoadingMessages } = useMessages(threadId);
