@@ -15,8 +15,8 @@ export default function ThreadPage() {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   const [streamingMessage, setStreamingMessage] = React.useState<string | null>(null);
 
-  const { data: thread, isLoading: isLoadingThread, error: threadError } = useThread(threadId);
-  const { data: messages = [], isLoading: isLoadingMessages } = useMessages(threadId);
+  const { data: thread, isLoading: isLoadingThread, error: threadError } = useThread(threadId as any);
+  const { data: messages = [], isLoading: isLoadingMessages } = useMessages(threadId as any);
   const sendMessage = useSendMessage();
 
   const handleSend = async (content: string) => {
@@ -24,7 +24,7 @@ export default function ThreadPage() {
     setStreamingMessage("");
     try {
       await sendMessage.mutateAsync({ 
-        threadId, 
+        threadId: threadId as any, 
         content,
         onChunk: (chunk) => setStreamingMessage(prev => (prev || "") + chunk)
       });
