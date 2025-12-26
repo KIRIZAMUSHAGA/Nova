@@ -8,6 +8,14 @@ export interface IStorage {
   updateThreadTitle(id: string, title: string): Promise<void>;
   getMessages(threadId: string): Promise<MessageType[]>;
   createMessage(message: any): Promise<MessageType>;
+  
+  // Replit Chat Integration compatibility
+  getAllConversations(): Promise<any[]>;
+  getConversation(id: string): Promise<any>;
+  getMessagesByConversation(id: string): Promise<any[]>;
+  createMessageInConversation(threadId: string, role: string, content: string): Promise<any>;
+  createConversation(title: string): Promise<any>;
+  deleteConversation(id: string): Promise<void>;
 }
 
 export class MongoStorage implements IStorage {
@@ -64,6 +72,33 @@ export class MongoStorage implements IStorage {
     const message = new Message(insertMessage);
     await message.save();
     return this.mapMessage(message);
+  }
+
+  // Compatibility methods for Replit Chat Integration
+  async getAllConversations() {
+    return this.getThreads();
+  }
+  
+  async getConversation(id: string) {
+    return this.getThread(id);
+  }
+  
+  async getMessagesByConversation(id: string) {
+    const messages = await Message.find({ threadId: id }).sort({ createdAt: 1 });
+    return messages.map(m => this.mapMessage(m));
+  }
+
+  async createMessageInConversation(threadId: string, role: string, content: string) {
+    return this.createMessage({ threadId, role, content });
+  }
+  
+  async createConversation(title: string) {
+    return this.createThread({ title });
+  }
+  
+  async deleteConversation(id: string) {
+    await Thread.findByIdAndDelete(id);
+    await Message.deleteMany({ threadId: id });
   }
 }
 

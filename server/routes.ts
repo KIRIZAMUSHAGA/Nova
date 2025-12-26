@@ -1,7 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { pool } from "./db";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import OpenAI from "openai";
@@ -79,17 +78,6 @@ export async function registerRoutes(
     try {
       console.log("STAR ACTION: creating thread...");
       
-      // Verification of DB connection health
-      try {
-        await pool.query('SELECT 1');
-      } catch (dbError: any) {
-        console.error("DATABASE CONNECTION ERROR:", dbError);
-        return res.status(503).json({ 
-          message: "Le service est temporairement indisponible (Base de données)", 
-          error: dbError.message 
-        });
-      }
-
       const thread = await storage.createThread({});
       console.log("Thread created successfully:", thread.id);
       res.status(201).json(thread);

@@ -1,6 +1,6 @@
 import type { Express, Request, Response } from "express";
 import OpenAI from "openai";
-import { chatStorage } from "./storage";
+import { storage as chatStorage } from "../../storage";
 
 function getOpenAIClient(): OpenAI {
   const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
@@ -28,7 +28,7 @@ export function registerChatRoutes(app: Express): void {
   // Get single conversation with messages
   app.get("/api/conversations/:id", async (req: Request, res: Response) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = req.params.id;
       const conversation = await chatStorage.getConversation(id);
       if (!conversation) {
         return res.status(404).json({ error: "Conversation not found" });
@@ -54,9 +54,9 @@ export function registerChatRoutes(app: Express): void {
   });
 
   // Delete conversation
-  app.delete("/api/conversations/:id", async (req: Request, res: Response) => {
+  app.post("/api/conversations/:id/delete", async (req: Request, res: Response) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = req.params.id;
       await chatStorage.deleteConversation(id);
       res.status(204).send();
     } catch (error) {
@@ -68,11 +68,11 @@ export function registerChatRoutes(app: Express): void {
   // Send message and get AI response (streaming)
   app.post("/api/conversations/:id/messages", async (req: Request, res: Response) => {
     try {
-      const conversationId = parseInt(req.params.id);
+      const conversationId = req.params.id;
       const { content } = req.body;
 
       // Save user message
-      await chatStorage.createMessage(conversationId, "user", content);
+      await chatStorage.createMessageInConversation(conversationId, "user", content);
 
       // HARDCODED RESPONSE FOR CREATOR QUESTION
       const contentLower = content.toLowerCase().trim();
@@ -84,7 +84,7 @@ export function registerChatRoutes(app: Express): void {
         const correctResponse = "Bonjour ! J'ai été créée par Ingénieur Kiriza Mushaga, né à Bumba dans la province de la Mongala, RDC, co-fondateur d'Okim Univers Global et créateur de Smartix. Mon rôle est de t'aider, de t'informer et de générer du contenu (texte, images, PDF) selon tes besoins.";
         
         // Save assistant message
-        await chatStorage.createMessage(conversationId, "assistant", correctResponse);
+        await chatStorage.createMessageInConversation(conversationId, "assistant", correctResponse);
 
         // Set up SSE and stream response
         res.setHeader("Content-Type", "text/event-stream");
@@ -251,7 +251,7 @@ Nova est une IA intelligente, honnête et multimodale qui:
       }
 
       // Save assistant message
-      await chatStorage.createMessage(conversationId, "assistant", fullResponse);
+      await chatStorage.createMessageInConversation(conversationId, "assistant", fullResponse);
 
       res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
       res.end();

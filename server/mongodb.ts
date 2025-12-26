@@ -21,7 +21,7 @@ const threadSchema = new mongoose.Schema({
 });
 
 const messageSchema = new mongoose.Schema({
-  threadId: { type: mongoose.Schema.Types.ObjectId, ref: 'Thread', required: true },
+  threadId: { type: String, required: true },
   role: { type: String, required: true },
   content: { type: String, required: true },
   metadata: { type: mongoose.Schema.Types.Mixed, default: null },
