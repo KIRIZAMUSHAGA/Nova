@@ -79,18 +79,26 @@ export async function registerRoutes(
 
   app.post(api.threads.create.path, async (req, res) => {
     try {
-      console.log("Creating new thread...");
+      console.log("STAR ACTION: creating thread...");
+      
+      // Verification of DB connection health
+      try {
+        await pool.query('SELECT 1');
+      } catch (dbError: any) {
+        console.error("DATABASE CONNECTION ERROR:", dbError);
+        return res.status(503).json({ 
+          message: "Le service est temporairement indisponible (Base de données)", 
+          error: dbError.message 
+        });
+      }
+
       const thread = await storage.createThread({});
       console.log("Thread created successfully:", thread.id);
       res.status(201).json(thread);
     } catch (error: any) {
-      console.error("CRITICAL Error creating thread:", error);
-      // Detailed error logging for DNS issues
-      if (error.code === 'EAI_AGAIN') {
-        console.error("DNS Resolution failed (EAI_AGAIN) for database or external service.");
-      }
+      console.error("THREAD ERROR:", error);
       res.status(500).json({ 
-        message: "Failed to create thread", 
+        message: "Impossible de créer la conversation", 
         error: error.message,
         code: error.code 
       });

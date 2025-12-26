@@ -13,9 +13,12 @@ if (!process.env.DATABASE_URL) {
 // Optimized pool for serverless/cloud environments
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
-  max: 10,
+  max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
+  connectionTimeoutMillis: 10000, // Increased timeout
+  ssl: {
+    rejectUnauthorized: false // Required for many cloud DB providers
+  }
 });
 
 export const db = drizzle(pool, { schema });
