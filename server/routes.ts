@@ -14,12 +14,9 @@ dns.setServers(["8.8.8.8", "1.1.1.1", "8.8.4.4"]);
 let openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
   if (!openai) {
+    // These are auto-configured by the Replit AI Integration
     const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
     const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
-
-    if (!apiKey) {
-      console.warn("AI_INTEGRATIONS_OPENAI_API_KEY is not set. OpenAI features will fail.");
-    }
 
     openai = new OpenAI({
       apiKey: apiKey || "dummy-key",
