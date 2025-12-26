@@ -4,6 +4,7 @@ import { serveStatic } from "./static";
 import { createServer } from "http";
 import { registerChatRoutes } from "./replit_integrations/chat";
 import { registerImageRoutes } from "./replit_integrations/image";
+import { connectDB } from "./mongodb";
 
 const app = express();
 const httpServer = createServer(app);
@@ -62,6 +63,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Connect to MongoDB
+  await connectDB();
+
   // Register AI integration routes (chat with streaming, image generation)
   registerChatRoutes(app);
   registerImageRoutes(app);

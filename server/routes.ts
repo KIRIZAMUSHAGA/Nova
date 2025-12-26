@@ -109,19 +109,19 @@ export async function registerRoutes(
   });
 
   app.get(api.threads.get.path, async (req, res) => {
-    const thread = await storage.getThread(Number(req.params.id));
+    const thread = await storage.getThread(req.params.id);
     if (!thread) return res.status(404).json({ message: "Thread not found" });
     res.json(thread);
   });
 
   app.get(api.messages.list.path, async (req, res) => {
-    const messages = await storage.getMessages(Number(req.params.id));
+    const messages = await storage.getMessages(req.params.id);
     res.json(messages);
   });
 
   app.post(api.messages.create.path, async (req, res) => {
     try {
-      const threadId = Number(req.params.id);
+      const threadId = req.params.id;
       const { content } = api.messages.create.input.parse(req.body);
 
       // 1. Save user message

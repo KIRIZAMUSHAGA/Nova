@@ -3,15 +3,15 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const threads = pgTable("threads", {
-  id: serial("id").primaryKey(),
+  id: text("id").primaryKey(),
   title: text("title"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const messages = pgTable("messages", {
-  id: serial("id").primaryKey(),
-  threadId: serial("thread_id").references(() => threads.id),
+  id: text("id").primaryKey(),
+  threadId: text("thread_id").notNull(),
   role: text("role").notNull(), // 'user', 'assistant', 'system'
   content: text("content").notNull(),
   metadata: jsonb("metadata"), // For extra context or reasoning steps if needed

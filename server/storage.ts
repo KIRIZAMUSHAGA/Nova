@@ -1,56 +1,70 @@
-import { db } from "./db";
-import { threads, messages, type Thread, type Message, type InsertThread, type InsertMessage } from "@shared/schema";
-import { eq, desc, asc } from "drizzle-orm";
+import { Thread, Message } from "./mongodb";
+import { type Thread as ThreadType, type Message as MessageType } from "@shared/schema";
 
 export interface IStorage {
-  createThread(thread: InsertThread): Promise<Thread>;
-  getThreads(): Promise<Thread[]>;
-  getThread(id: number): Promise<Thread | undefined>;
-  createMessage(message: InsertMessage): Promise<Message>;
-  getMessages(threadId: number): Promise<Message[]>;
-  updateThreadTitle(threadId: number, title: string): Promise<Thread>;
+  getThreads(): Promise<ThreadType[]>;
+  getThread(id: string): Promise<ThreadType | undefined>;
+  createThread(thread: any): Promise<ThreadType>;
+  updateThreadTitle(id: string, title: string): Promise<void>;
+  getMessages(threadId: string): Promise<MessageType[]>;
+  createMessage(message: any): Promise<MessageType>;
 }
 
-export class DatabaseStorage implements IStorage {
-  async createThread(thread: InsertThread): Promise<Thread> {
-    const [newThread] = await db.insert(threads).values(thread).returning();
-    return newThread;
+export class MongoStorage implements IStorage {
+  private mapThread(doc: any): ThreadType {
+    return {
+      id: doc._id.toString() as any,
+      title: doc.title || null,
+      createdAt: doc.createdAt || new Date(),
+      updatedAt: doc.updatedAt || new Date(),
+    };
   }
 
-  async getThreads(): Promise<Thread[]> {
-    return await db.select().from(threads).orderBy(desc(threads.updatedAt));
+  private mapMessage(doc: any): MessageType {
+    return {
+      id: doc._id.toString() as any,
+      threadId: doc.threadId.toString() as any,
+      role: doc.role,
+      content: doc.content,
+      metadata: doc.metadata || null,
+      createdAt: doc.createdAt || new Date(),
+    };
   }
 
-  async getThread(id: number): Promise<Thread | undefined> {
-    const [thread] = await db.select().from(threads).where(eq(threads.id, id));
-    return thread;
+  async getThreads(): Promise<ThreadType[]> {
+    const threads = await Thread.find().sort({ updatedAt: -1 });
+    return threads.map(this.mapThread);
   }
 
-  async createMessage(message: InsertMessage): Promise<Message> {
-    const [newMessage] = await db.insert(messages).values(message).returning();
-    // Update thread updated_at
-    if (message.threadId) {
-      await db.update(threads)
-        .set({ updatedAt: new Date() })
-        .where(eq(threads.id, message.threadId));
+  async getThread(id: string): Promise<ThreadType | undefined> {
+    try {
+      const thread = await Thread.findById(id);
+      return thread ? this.mapThread(thread) : undefined;
+    } catch {
+      return undefined;
     }
-    return newMessage;
   }
 
-  async getMessages(threadId: number): Promise<Message[]> {
-    return await db.select()
-      .from(messages)
-      .where(eq(messages.threadId, threadId))
-      .orderBy(asc(messages.id));
+  async createThread(insertThread: any): Promise<ThreadType> {
+    const thread = new Thread(insertThread);
+    await thread.save();
+    return this.mapThread(thread);
   }
 
-  async updateThreadTitle(threadId: number, title: string): Promise<Thread> {
-    const [updated] = await db.update(threads)
-      .set({ title })
-      .where(eq(threads.id, threadId))
-      .returning();
-    return updated;
+  async updateThreadTitle(id: string, title: string): Promise<void> {
+    await Thread.findByIdAndUpdate(id, { title, updatedAt: new Date() });
+  }
+
+  async getMessages(threadId: string): Promise<MessageType[]> {
+    const messages = await Message.find({ threadId }).sort({ createdAt: 1 });
+    return messages.map(this.mapMessage);
+  }
+
+  async createMessage(insertMessage: any): Promise<MessageType> {
+    const message = new Message(insertMessage);
+    await message.save();
+    return this.mapMessage(message);
   }
 }
 
-export const storage = new DatabaseStorage();
+export const storage = new MongoStorage();
