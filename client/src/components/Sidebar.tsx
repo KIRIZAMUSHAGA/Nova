@@ -1,3 +1,4 @@
+import * as React from "react";
 import { Link, useLocation } from "wouter";
 import { useThreads, useCreateThread } from "@/hooks/use-threads";
 import { Button } from "@/components/ui/button";
@@ -19,14 +20,13 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function Sidebar() {
   const [location, setLocation] = useLocation();
   const { data: threads, isLoading } = useThreads();
   const createThread = useCreateThread();
-  const [isChatsExpanded, setIsChatsExpanded] = useState(true);
+  const [isChatsExpanded, setIsChatsExpanded] = React.useState(true);
 
   const handleNewChat = async () => {
     try {
@@ -38,7 +38,7 @@ export function Sidebar() {
   };
 
   const currentThreadId = location.startsWith("/thread/") 
-    ? parseInt(location.split("/")[2]) 
+    ? location.split("/")[2] 
     : null;
 
   return (
@@ -131,14 +131,14 @@ export function Sidebar() {
                         href={`/thread/${thread.id}`}
                         className={cn(
                           "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200 group relative overflow-hidden",
-                          currentThreadId === thread.id
+                          currentThreadId === String(thread.id)
                             ? "bg-primary/10 text-primary border border-primary/20" 
                             : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
                         )}
                       >
                         <MessageSquare className={cn(
                           "w-4 h-4 shrink-0",
-                          currentThreadId === thread.id ? "text-primary" : "text-muted-foreground/50 group-hover:text-primary/50"
+                          currentThreadId === String(thread.id) ? "text-primary" : "text-muted-foreground/50 group-hover:text-primary/50"
                         )} />
                         <div className="flex-1 overflow-hidden">
                           <p className="truncate font-medium">{thread.title || `Chat #${thread.id}`}</p>
