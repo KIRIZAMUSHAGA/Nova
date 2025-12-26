@@ -20,7 +20,7 @@ function Router() {
   );
 }
 
-function App() {
+export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -30,5 +30,3 @@ function App() {
     </QueryClientProvider>
   );
 }
-
-export default App;
