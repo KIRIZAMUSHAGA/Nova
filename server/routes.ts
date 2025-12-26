@@ -79,11 +79,21 @@ export async function registerRoutes(
 
   app.post(api.threads.create.path, async (req, res) => {
     try {
+      console.log("Creating new thread...");
       const thread = await storage.createThread({});
+      console.log("Thread created successfully:", thread.id);
       res.status(201).json(thread);
-    } catch (error) {
-      console.error("Error creating thread:", error);
-      res.status(500).json({ message: "Failed to create thread" });
+    } catch (error: any) {
+      console.error("CRITICAL Error creating thread:", error);
+      // Detailed error logging for DNS issues
+      if (error.code === 'EAI_AGAIN') {
+        console.error("DNS Resolution failed (EAI_AGAIN) for database or external service.");
+      }
+      res.status(500).json({ 
+        message: "Failed to create thread", 
+        error: error.message,
+        code: error.code 
+      });
     }
   });
 
