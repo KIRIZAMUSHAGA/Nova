@@ -4,17 +4,48 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import OpenAI from "openai";
+import dns from "dns";
+
+// Fix DNS resolution issues on Replit
+dns.setServers(["8.8.8.8", "1.1.1.1", "8.8.4.4"]);
 
 // Lazy initialization of OpenAI client
 let openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
   if (!openai) {
+    const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+    const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+
+    if (!apiKey) {
+      console.warn("AI_INTEGRATIONS_OPENAI_API_KEY is not set. OpenAI features will fail.");
+    }
+
     openai = new OpenAI({
-      apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-      baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      apiKey: apiKey || "dummy-key",
+      baseURL: baseURL,
     });
   }
   return openai;
+}
+
+async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
+  let lastError: any;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+      const isDnsError = error.code === 'EAI_AGAIN' || error.message?.includes('getaddrinfo');
+      if (isDnsError && attempt < maxRetries) {
+        const delay = Math.min(1000 * Math.pow(2, attempt), 5000);
+        console.warn(`DNS error (attempt ${attempt}/${maxRetries}), retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw lastError;
 }
 
 const SYSTEM_PROMPT = `Tu es une IA généraliste intelligente nommée "Nova", polyvalente et autonome.
@@ -152,12 +183,12 @@ export async function registerRoutes(
           res.setHeader("Connection", "keep-alive");
           res.write(`data: ${JSON.stringify({ content: "Je génère votre image, un instant... 🎨" })}\n\n`);
 
-          const response = await getOpenAI().images.generate({
+          const response = await withRetry(() => getOpenAI().images.generate({
             model: "gpt-4o", // Use a standard model that supports image generation via the integration
             prompt: content,
             n: 1,
             size: "1024x1024",
-          });
+          }));
 
           const imageUrl = response.data?.[0]?.url;
           if (imageUrl) {
@@ -192,13 +223,13 @@ export async function registerRoutes(
         // Run this in background or fire-and-forget to not block
         (async () => {
           try {
-            const titleResponse = await getOpenAI().chat.completions.create({
+            const titleResponse = await withRetry(() => getOpenAI().chat.completions.create({
               model: "gpt-4o",
               messages: [
                 { role: "system", content: "Summarize the following message into a short, concise title (max 5 words) for a chat conversation. Return ONLY the title." },
                 { role: "user", content }
               ],
-            });
+            }));
             const title = titleResponse.choices[0].message.content?.trim();
             if (title) {
               await storage.updateThreadTitle(threadId, title);
@@ -214,14 +245,14 @@ export async function registerRoutes(
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
 
-      const stream = await getOpenAI().chat.completions.create({
+      const stream = await withRetry(() => getOpenAI().chat.completions.create({
         model: "gpt-4o",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           ...conversation
         ],
         stream: true,
-      });
+      }));
 
       let aiContent = "";
       for await (const chunk of stream) {
