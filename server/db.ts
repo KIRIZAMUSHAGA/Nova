@@ -11,13 +11,16 @@ if (!process.env.DATABASE_URL) {
 }
 
 // Optimized pool for serverless/cloud environments
+// Use the public hostname instead of internal 'helium' for reliability in deployment
+const connectionString = process.env.DATABASE_URL;
+
 export const pool = new Pool({ 
-  connectionString: process.env.DATABASE_URL,
+  connectionString,
   max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000, // Increased timeout
+  connectionTimeoutMillis: 10000,
   ssl: {
-    rejectUnauthorized: false // Required for many cloud DB providers
+    rejectUnauthorized: false
   }
 });
 
