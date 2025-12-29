@@ -6,7 +6,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Plus, 
   MessageSquare, 
-  Box, 
   Sparkles, 
   FileText, 
   Image as ImageIcon, 
@@ -16,9 +15,9 @@ import {
   User as UserIcon, 
   Rocket, 
   ChevronDown, 
-  ChevronRight 
+  ChevronRight,
+  Loader2
 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -43,8 +42,9 @@ export function Sidebar() {
 
   if (isLoading) {
     return (
-      <div className="w-80 border-r border-border bg-card/30 backdrop-blur-md flex flex-col h-full items-center justify-center">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="w-80 border-r border-border bg-card/30 backdrop-blur-md flex flex-col h-full items-center justify-center p-6">
+        <Loader2 className="h-8 w-8 text-primary animate-spin" />
+        <p className="text-sm text-muted-foreground mt-4 animate-pulse">Chargement de Nova...</p>
       </div>
     );
   }
@@ -77,7 +77,7 @@ export function Sidebar() {
               disabled={createThread.isPending}
               className="w-full justify-start gap-3 h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:translate-y-[-2px] active:translate-y-0"
             >
-              <Plus className="w-5 h-5" />
+              {createThread.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
               <span className="font-semibold">{createThread.isPending ? "Initialisation..." : "Nouvelle conversation"}</span>
             </Button>
 
@@ -122,13 +122,7 @@ export function Sidebar() {
                   exit={{ height: 0, opacity: 0 }}
                   className="space-y-1 overflow-hidden"
                 >
-                  {isLoading ? (
-                    <div className="space-y-2 px-2 py-2">
-                      {[1, 2, 3].map((i) => (
-                        <div key={i} className="h-10 rounded-lg bg-muted/20 animate-pulse" />
-                      ))}
-                    </div>
-                  ) : threads?.length === 0 ? (
+                  {threads?.length === 0 ? (
                     <div className="text-center py-6 px-4 text-muted-foreground/50 italic text-xs">
                       Aucun chat récent
                     </div>

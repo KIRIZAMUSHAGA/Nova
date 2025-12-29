@@ -2,7 +2,7 @@ import * as React from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Sparkles, Zap, Shield, MessageSquare } from "lucide-react";
+import { Menu, Sparkles, Zap, Shield, MessageSquare, Loader2 } from "lucide-react";
 import { useCreateThread } from "@/hooks/use-threads";
 import { useLocation } from "wouter";
 
@@ -22,10 +22,12 @@ export default function HomePage() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground font-sans">
+      {/* Desktop Sidebar */}
       <div className="hidden md:block h-full shrink-0">
         <Sidebar />
       </div>
 
+      {/* Mobile Sidebar */}
       <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
         <SheetTrigger asChild>
           <div />
@@ -35,16 +37,17 @@ export default function HomePage() {
         </SheetContent>
       </Sheet>
 
+      {/* Main Content */}
       <div className="flex-1 flex flex-col h-full relative overflow-hidden">
+        {/* Mobile Header */}
         <header className="absolute top-0 left-0 right-0 h-16 flex items-center px-4 z-10 md:hidden">
-          <div className="mr-2">
-            <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(true)}>
-              <Menu className="w-5 h-5" />
-            </Button>
-          </div>
+          <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(true)}>
+            <Menu className="w-5 h-5" />
+          </Button>
         </header>
 
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center z-0 relative overflow-y-auto">
+          {/* Background decoration */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-primary/5 rounded-full blur-3xl -z-10" />
           
           <div className="max-w-2xl mx-auto space-y-8 py-12">
@@ -67,11 +70,19 @@ export default function HomePage() {
               size="lg" 
               onClick={handleStartChat}
               disabled={createThread.isPending}
-              className="h-14 px-8 rounded-full text-lg bg-white text-black hover:bg-white/90 shadow-xl shadow-white/5 font-semibold transition-all hover:scale-105 active:scale-95"
+              className="h-14 px-8 rounded-full text-lg bg-primary text-primary-foreground shadow-xl shadow-primary/20 font-semibold transition-all hover:scale-105 active:scale-95"
             >
-              {createThread.isPending ? "Initialisation..." : "Démarrer une conversation"}
+              {createThread.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Initialisation...
+                </>
+              ) : (
+                "Démarrer une conversation"
+              )}
             </Button>
 
+            {/* Features Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-12">
               {[
                 { icon: Zap, title: "Réponses Rapides", desc: "Propulsé par des LLMs avancés" },
