@@ -24,8 +24,10 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Router />
-        <Toaster />
+        <div className="flex flex-col min-h-screen bg-background text-foreground">
+          <Router />
+          <Toaster />
+        </div>
       </TooltipProvider>
     </QueryClientProvider>
   );

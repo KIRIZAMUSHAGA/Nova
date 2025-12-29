@@ -21,7 +21,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background text-foreground font-sans">
+    <div className="flex h-screen w-full overflow-hidden bg-background text-foreground font-sans">
       {/* Desktop Sidebar */}
       <div className="hidden md:block h-full shrink-0">
         <Sidebar />
@@ -38,19 +38,19 @@ export default function HomePage() {
       </Sheet>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col h-full relative overflow-hidden">
+      <div className="flex-1 flex flex-col h-full relative overflow-hidden w-full">
         {/* Mobile Header */}
         <header className="absolute top-0 left-0 right-0 h-16 flex items-center px-4 z-10 md:hidden">
-          <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(true)}>
+          <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(true)} className="hover-elevate">
             <Menu className="w-5 h-5" />
           </Button>
         </header>
 
-        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center z-0 relative overflow-y-auto">
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center z-0 relative overflow-y-auto w-full">
           {/* Background decoration */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-primary/5 rounded-full blur-3xl -z-10" />
           
-          <div className="max-w-2xl mx-auto space-y-8 py-12">
+          <div className="max-w-2xl mx-auto space-y-8 py-12 w-full">
             <div className="space-y-4">
               <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-tr from-primary to-accent rounded-3xl mx-auto flex items-center justify-center shadow-2xl shadow-primary/30 mb-6 rotate-3 hover:rotate-6 transition-transform duration-300">
                 <Sparkles className="w-8 h-8 md:w-10 md:h-10 text-white" />
@@ -83,7 +83,7 @@ export default function HomePage() {
             </Button>
 
             {/* Features Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-12">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-12 w-full">
               {[
                 { icon: Zap, title: "Réponses Rapides", desc: "Propulsé par des LLMs avancés" },
                 { icon: Shield, title: "Sécurisé & Privé", desc: "Vos données vous appartiennent" },
