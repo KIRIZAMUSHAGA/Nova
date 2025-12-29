@@ -41,6 +41,14 @@ export function Sidebar() {
     ? location.split("/")[2]
     : null;
 
+  if (isLoading) {
+    return (
+      <div className="w-80 border-r border-border bg-card/30 backdrop-blur-md flex flex-col h-full items-center justify-center">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="w-80 border-r border-border bg-card/30 backdrop-blur-md flex flex-col h-full overflow-hidden">
       {/* SECTION 1 — En-tête Nova */}
