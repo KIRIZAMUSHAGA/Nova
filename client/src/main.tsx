@@ -3,9 +3,12 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
+console.log("[main] Starting application mounting...");
+
 const rootElement = document.getElementById("root");
-console.log("Mounting application to root element:", rootElement);
+
 if (rootElement) {
+  console.log("[main] Root element found, mounting React...");
   const root = createRoot(rootElement);
   root.render(
     <React.StrictMode>
@@ -13,5 +16,7 @@ if (rootElement) {
     </React.StrictMode>
   );
 } else {
-  console.error("Critical Error: Root element '#root' not found in document. Body contains:", document.body.innerHTML);
+  console.error("[main] Critical Error: Root element '#root' not found.");
+  // Emergency fallback if root is missing
+  document.body.innerHTML = '<div style="color:white; background:black; padding:20px; font-family:sans-serif;"><h1>Erreur de Chargement</h1><p>L\'élément racine (#root) est manquant. Veuillez rafraîchir la page.</p></div>';
 }
