@@ -7,6 +7,7 @@ export default defineConfig({
   plugins: [
     react(),
     // runtimeErrorOverlay(),
+    /* Disabled expensive dev plugins for faster loading
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined
       ? [
@@ -18,6 +19,7 @@ export default defineConfig({
           ),
         ]
       : []),
+    */
   ],
   resolve: {
     alias: {
