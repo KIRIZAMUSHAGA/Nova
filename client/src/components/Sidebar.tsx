@@ -51,7 +51,6 @@ export function Sidebar() {
 
   return (
     <div className="w-80 border-r border-border bg-card/30 backdrop-blur-md flex flex-col h-full overflow-hidden">
-      {/* SECTION 1 — En-tête Nova */}
       <div className="p-6 border-b border-border/50 relative group cursor-pointer hover:bg-white/5 transition-colors" onClick={() => setLocation("/about")}>
         <div className="flex items-center gap-4">
           <div className="relative">
@@ -70,7 +69,6 @@ export function Sidebar() {
 
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-6">
-          {/* SECTION 2 — Actions principales */}
           <div className="space-y-2">
             <Button 
               onClick={handleNewChat} 
@@ -101,7 +99,6 @@ export function Sidebar() {
             </div>
           </div>
 
-          {/* SECTION 3 — Conversations récentes */}
           <div className="space-y-2">
             <button 
               onClick={() => setIsChatsExpanded(!isChatsExpanded)}
@@ -155,7 +152,6 @@ export function Sidebar() {
         </div>
       </ScrollArea>
 
-      {/* SECTION 4 — Paramètres & identité */}
       <div className="p-4 bg-background/40 backdrop-blur-xl border-t border-border/50 space-y-1">
         <Button variant="ghost" className="w-full justify-start gap-3 h-10 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 px-3">
           <Settings className="w-4 h-4" />
