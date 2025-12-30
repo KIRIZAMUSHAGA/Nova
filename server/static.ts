@@ -14,11 +14,26 @@ export function serveStatic(app: Express) {
   }
 
   console.log(`[static] Serving static files from: ${distPath}`);
-  app.use(express.static(distPath));
+  
+  // Important: serve index.html with no-cache to avoid blank page issues after redeploy
+  app.get("/", (_req, res) => {
+    const indexPath = path.resolve(distPath, "index.html");
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.sendFile(indexPath);
+  });
 
-  app.use("*", (_req, res) => {
+  app.use(express.static(distPath, {
+    setHeaders: (res, path) => {
+      if (path.endsWith(".html")) {
+        res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+      }
+    }
+  }));
+
+  app.use("*", (req, res) => {
     const indexPath = path.resolve(distPath, "index.html");
     if (fs.existsSync(indexPath)) {
+      res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
       res.sendFile(indexPath);
     } else {
       res.status(404).send("Not Found");
