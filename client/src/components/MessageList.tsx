@@ -58,21 +58,21 @@ export function MessageList({ messages, isLoading, streamingMessage }: MessageLi
                     : "bg-card text-card-foreground rounded-tl-sm border border-border/50"
                 )}>
                   {isUser ? (
-                    <div className="whitespace-pre-wrap font-medium">
-                      {message.content}
+                    <div className="flex flex-col gap-3">
+                      <div className="whitespace-pre-wrap font-medium">{message.content}</div>
                       {message.attachment && (
-                        <div className="mt-4 flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-2">
                           <div className="group relative flex items-center gap-3 p-3 rounded-xl bg-background/40 border border-white/5 hover:border-primary/50 transition-all duration-300">
                             {message.attachment.match(/\.(jpg|jpeg|png|gif|webp)$/i) || message.attachment.startsWith("/objects/") ? (
-                              <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-white/10">
+                              <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-white/10 shrink-0">
                                 <img src={message.attachment} alt="Attachment" className="w-full h-full object-cover" />
                               </div>
                             ) : (
-                              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary">
+                              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary shrink-0">
                                 <Paperclip className="w-5 h-5" />
                               </div>
                             )}
-                            <div className="flex flex-col">
+                            <div className="flex flex-col min-w-0">
                               <span className="text-xs font-medium text-foreground/70 truncate max-w-[150px]">
                                 {message.attachment.split("/").pop()}
                               </span>
