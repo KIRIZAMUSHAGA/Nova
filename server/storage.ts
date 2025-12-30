@@ -59,6 +59,7 @@ export class MongoStorage implements IStorage {
       threadId: doc.threadId.toString() as any,
       role: doc.role,
       content: doc.content,
+      attachment: doc.attachment || null,
       metadata: doc.metadata || null,
       createdAt: doc.createdAt || new Date(),
     };

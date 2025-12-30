@@ -77,10 +77,40 @@ const SYSTEM_PROMPT = `Tu es une IA généraliste intelligente nommée "Nova", p
 
 🚀 Objectif ultime: Aider l'utilisateur à apprendre plus vite, décider mieux, créer plus intelligemment et résoudre des problèmes complexes.`;
 
+import { WhatsAppManager } from "./whatsapp/manager";
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+
+  // WhatsApp Routes
+  app.get("/api/whatsapp/session", authMiddleware, async (req: AuthRequest, res) => {
+    try {
+      const session = await storage.getWhatsappSession(req.user!.userId);
+      res.json(session || { status: 'disconnected' });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get session" });
+    }
+  });
+
+  app.post("/api/whatsapp/connect", authMiddleware, async (req: AuthRequest, res) => {
+    try {
+      WhatsAppManager.initializeClient(req.user!.userId).catch(console.error);
+      res.json({ message: "Initialization started" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to start connection" });
+    }
+  });
+
+  app.post("/api/whatsapp/logout", authMiddleware, async (req: AuthRequest, res) => {
+    try {
+      await WhatsAppManager.logout(req.user!.userId);
+      res.json({ message: "Logged out" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to logout" });
+    }
+  });
 
   // Register object storage routes
   registerObjectStorageRoutes(app);
@@ -173,13 +203,18 @@ export async function registerRoutes(
       }
 
       // Check password
-      const userDoc = await (require("./mongodb")).User.findById(user.id);
+      const userDoc = await storage.getUserById(user.id);
       if (!userDoc) {
         res.status(401).json({ message: "Invalid email/phone or password" });
         return;
       }
 
-      const passwordMatch = await comparePassword(password, userDoc.passwordHash);
+      // Since we don't have passwordHash in UserType, we need to handle this carefully
+      // For now, let's use the MongoDB User model directly as it was before, but safely
+      const { User: MongoUser } = require("./mongodb");
+      const fullUser = await MongoUser.findById(user.id);
+      
+      const passwordMatch = await comparePassword(password, fullUser.passwordHash);
       if (!passwordMatch) {
         res.status(401).json({ message: "Invalid email/phone or password" });
         return;
