@@ -63,6 +63,15 @@ export class MongoStorage implements IStorage {
     return threads.map(this.mapThread);
   }
 
+  async getThreadsByUserId(userId: string): Promise<ThreadType[]> {
+    try {
+      const threads = await Thread.find({ userId }).sort({ updatedAt: -1 });
+      return threads.map(this.mapThread);
+    } catch {
+      return [];
+    }
+  }
+
   async getThread(id: string): Promise<ThreadType | undefined> {
     try {
       const thread = await Thread.findById(id);

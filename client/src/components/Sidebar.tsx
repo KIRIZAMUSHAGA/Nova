@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Link, useLocation } from "wouter";
 import { useThreads, useCreateThread } from "@/hooks/use-threads";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
@@ -16,7 +17,8 @@ import {
   Rocket, 
   ChevronDown, 
   ChevronRight,
-  Loader2
+  Loader2,
+  LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -29,6 +31,7 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [location, setLocation] = useLocation();
   const { data: threads, isLoading } = useThreads();
+  const { user, logout } = useAuth();
   const createThread = useCreateThread();
   const [isChatsExpanded, setIsChatsExpanded] = React.useState(true);
   const [deferredPrompt, setDeferredPrompt] = React.useState<any>(null);
@@ -201,11 +204,25 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
         </ScrollArea>
 
-        <div className="p-4 bg-background/40 backdrop-blur-xl border-t border-border/50 space-y-1">
-          <Button variant="ghost" className="w-full justify-start gap-3 h-10 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 px-3">
-            <Settings className="w-4 h-4" />
-            Paramètres
-          </Button>
+        <div className="p-4 bg-background/40 backdrop-blur-xl border-t border-border/50 space-y-3">
+          {/* User Info */}
+          {user && (
+            <div className="p-3 bg-white/5 border border-white/10 rounded-lg space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Compte</p>
+              <p className="text-sm font-medium text-foreground truncate" data-testid="text-user-email">{user.email}</p>
+              <Button 
+                variant="destructive"
+                size="sm"
+                onClick={logout}
+                className="w-full justify-start gap-2 h-9 rounded-lg text-xs font-medium"
+                data-testid="button-logout"
+              >
+                <LogOut className="w-4 h-4" />
+                Se déconnecter
+              </Button>
+            </div>
+          )}
+
           <Button 
             variant="ghost" 
             onClick={() => setLocation("/about")}
@@ -223,14 +240,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               📲 Installer Nova
             </Button>
           )}
-          <Button variant="ghost" className="w-full justify-start gap-3 h-10 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 px-3">
-            <UserIcon className="w-4 h-4" />
-            Le Créateur
-          </Button>
-          <Button variant="ghost" className="w-full justify-start gap-3 h-10 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 px-3">
-            <Rocket className="w-4 h-4" />
-            Vision & Futur
-          </Button>
         </div>
       </div>
     </>

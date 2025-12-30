@@ -204,13 +204,18 @@ export async function registerRoutes(
     }
   });
 
-  // ============ THREADS & MESSAGES ENDPOINTS ============
+  // ============ THREADS & MESSAGES ENDPOINTS (PROTECTED) ============
 
-  app.post(api.threads.create.path, async (req, res) => {
+  app.post(api.threads.create.path, authMiddleware, async (req: AuthRequest, res) => {
     try {
-      console.log("STAR ACTION: creating thread...");
+      if (!req.user) {
+        res.status(401).json({ message: "Not authenticated" });
+        return;
+      }
+
+      console.log("STAR ACTION: creating thread for user:", req.user.userId);
       
-      const thread = await storage.createThread({});
+      const thread = await storage.createThread({ userId: req.user.userId });
       console.log("Thread created successfully:", thread.id);
       res.status(201).json(thread);
     } catch (error: any) {
@@ -223,23 +228,63 @@ export async function registerRoutes(
     }
   });
 
-  app.get(api.threads.list.path, async (req, res) => {
-    const threads = await storage.getThreads();
-    res.json(threads);
+  app.get(api.threads.list.path, authMiddleware, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user) {
+        res.status(401).json({ message: "Not authenticated" });
+        return;
+      }
+
+      const threads = await storage.getThreadsByUserId(req.user.userId);
+      res.json(threads);
+    } catch (error: any) {
+      console.error("Error fetching threads:", error);
+      res.status(500).json({ message: "Failed to fetch threads" });
+    }
   });
 
-  app.get(api.threads.get.path, async (req, res) => {
-    const thread = await storage.getThread(req.params.id);
-    if (!thread) return res.status(404).json({ message: "Thread not found" });
-    res.json(thread);
+  app.get(api.threads.get.path, authMiddleware, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user) {
+        res.status(401).json({ message: "Not authenticated" });
+        return;
+      }
+
+      const thread = await storage.getThread(req.params.id);
+      if (!thread) {
+        res.status(404).json({ message: "Thread not found" });
+        return;
+      }
+
+      // Verify ownership
+      if ((thread as any).userId !== req.user.userId) {
+        res.status(403).json({ message: "Forbidden" });
+        return;
+      }
+
+      res.json(thread);
+    } catch (error: any) {
+      console.error("Error fetching thread:", error);
+      res.status(500).json({ message: "Failed to fetch thread" });
+    }
   });
 
-  app.get(api.messages.list.path, async (req, res) => {
-    const messages = await storage.getMessages(req.params.id);
-    res.json(messages);
+  app.get(api.messages.list.path, authMiddleware, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user) {
+        res.status(401).json({ message: "Not authenticated" });
+        return;
+      }
+
+      const messages = await storage.getMessages(req.params.id);
+      res.json(messages);
+    } catch (error: any) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
   });
 
-  app.post(api.messages.create.path, async (req, res) => {
+  app.post(api.messages.create.path, authMiddleware, async (req: AuthRequest, res) => {
     try {
       const threadId = req.params.id;
       const { content } = api.messages.create.input.parse(req.body);
