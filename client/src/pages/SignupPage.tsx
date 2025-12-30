@@ -6,9 +6,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
-import { Sparkles, Loader2, ArrowLeft } from "lucide-react";
+import { Sparkles, Loader2, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import * as React from "react";
 
 const signupSchema = z.object({
   email: z.string().email("Email invalide").optional().or(z.literal("")),
@@ -29,6 +30,8 @@ export default function SignupPage() {
   const [, setLocation] = useLocation();
   const { signup } = useAuth();
   const { toast } = useToast();
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
   const form = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
@@ -58,7 +61,17 @@ export default function SignupPage() {
       }, 100);
     } catch (error: any) {
       console.error("Signup error caught in component:", error);
-      const message = error.message || "Erreur lors de la création du compte";
+      let message = "Erreur lors de la création du compte";
+      
+      // Check for specific backend error messages
+      if (error.message?.includes("Email already registered") || error.message?.includes("email")) {
+        message = "Cette adresse e-mail est déjà utilisée.";
+      } else if (error.message?.includes("Phone number already registered") || error.message?.includes("phone")) {
+        message = "Ce numéro de téléphone est déjà utilisé.";
+      } else if (error.message) {
+        message = error.message;
+      }
+
       toast({
         title: "Erreur",
         description: message,
@@ -149,13 +162,28 @@ export default function SignupPage() {
                 <FormItem>
                   <FormLabel>Mot de passe</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="••••••••"
-                      type="password"
-                      autoComplete="new-password"
-                      {...field}
-                      data-testid="input-password"
-                    />
+                    <div className="relative">
+                      <Input
+                        placeholder="••••••••"
+                        type={showPassword ? "text" : "password"}
+                        autoComplete="new-password"
+                        {...field}
+                        data-testid="input-password"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -169,13 +197,28 @@ export default function SignupPage() {
                 <FormItem>
                   <FormLabel>Confirmer le mot de passe</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="••••••••"
-                      type="password"
-                      autoComplete="new-password"
-                      {...field}
-                      data-testid="input-confirm-password"
-                    />
+                    <div className="relative">
+                      <Input
+                        placeholder="••••••••"
+                        type={showConfirmPassword ? "text" : "password"}
+                        autoComplete="new-password"
+                        {...field}
+                        data-testid="input-confirm-password"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
