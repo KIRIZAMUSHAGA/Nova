@@ -220,9 +220,14 @@ export async function registerRoutes(
 
       // Since we don't have passwordHash in UserType, we need to handle this carefully
       // For now, let's use the MongoDB User model directly as it was before, but safely
-      const { User: MongoUser } = require("./mongodb");
+      const { User: MongoUser } = await import("./mongodb");
       const fullUser = await MongoUser.findById(user.id);
       
+      if (!fullUser) {
+        res.status(401).json({ message: "Invalid email/phone or password" });
+        return;
+      }
+
       const passwordMatch = await comparePassword(password, fullUser.passwordHash);
       if (!passwordMatch) {
         res.status(401).json({ message: "Invalid email/phone or password" });

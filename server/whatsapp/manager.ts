@@ -30,13 +30,17 @@ export class WhatsAppManager {
     });
 
     client.on('qr', async (qr) => {
-      const qrDataUrl = await qrcode.toDataURL(qr);
-      await storage.upsertWhatsappSession({
-        userId,
-        status: 'qr_ready',
-        qrCode: qrDataUrl,
-      });
-      console.log(`QR Code generated for user ${userId}`);
+      try {
+        const qrDataUrl = await qrcode.toDataURL(qr);
+        await storage.upsertWhatsappSession({
+          userId,
+          status: 'qr_ready',
+          qrCode: qrDataUrl,
+        });
+        console.log(`QR Code generated and saved for user ${userId}`);
+      } catch (err) {
+        console.error(`Error saving QR code for user ${userId}:`, err);
+      }
     });
 
     client.on('ready', async () => {
