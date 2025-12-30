@@ -33,6 +33,7 @@ export class MongoStorage implements IStorage {
   private mapThread(doc: any): ThreadType {
     return {
       id: doc._id.toString() as any,
+      userId: doc.userId,
       title: doc.title || null,
       createdAt: doc.createdAt || new Date(),
       updatedAt: doc.updatedAt || new Date(),
