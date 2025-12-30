@@ -1,13 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@shared/routes";
 import { type Thread, type Message } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
 
 export function useThreads() {
   return useQuery({
     queryKey: [api.threads.list.path],
     queryFn: async () => {
-      const res = await fetch(api.threads.list.path);
-      if (!res.ok) throw new Error("Failed to fetch threads");
+      const res = await apiRequest("GET", api.threads.list.path);
       return await res.json() as Thread[];
     },
   });
@@ -20,8 +20,7 @@ export function useThread(id: string | null) {
     queryFn: async () => {
       if (!id) return null;
       const url = api.threads.get.path.replace(":id", id);
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Failed to fetch thread");
+      const res = await apiRequest("GET", url);
       return await res.json() as Thread;
     },
   });
@@ -31,10 +30,7 @@ export function useCreateThread() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const res = await fetch(api.threads.create.path, {
-        method: api.threads.create.method,
-      });
-      if (!res.ok) throw new Error("Failed to create thread");
+      const res = await apiRequest(api.threads.create.method, api.threads.create.path);
       return await res.json() as Thread;
     },
     onSuccess: () => {
@@ -51,8 +47,7 @@ export function useMessages(threadId: string | null) {
     queryFn: async () => {
       if (!threadId) return [];
       const url = api.messages.list.path.replace(":id", threadId);
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Failed to fetch messages");
+      const res = await apiRequest("GET", url);
       return await res.json() as Message[];
     },
   });
@@ -71,14 +66,8 @@ export function useSendMessage() {
       onChunk?: (chunk: string) => void;
     }) => {
       const url = api.messages.create.path.replace(":id", threadId);
-      const res = await fetch(url, {
-        method: api.messages.create.method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
-      });
+      const res = await apiRequest(api.messages.create.method, url, { content });
       
-      if (!res.ok) throw new Error("Failed to send message");
-
       const reader = res.body?.getReader();
       const decoder = new TextDecoder();
       let fullResponse = "";
