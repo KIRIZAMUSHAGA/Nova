@@ -7,19 +7,27 @@ import OpenAI from "openai";
 import dns from "dns";
 
 // Fix DNS resolution issues on Replit
-dns.setServers(["8.8.8.8", "1.1.1.1", "8.8.4.4"]);
+dns.setServers(["8.8.8.8", "1.1.1.1", "8.8.4.4", "208.67.222.222"]);
+
+// Safe environment variable access helper
+function getEnv(key: string, fallback: string = ""): string {
+  return process.env[key] || fallback;
+}
 
 // Lazy initialization of OpenAI client
 let openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
   if (!openai) {
-    // These are auto-configured by the Replit AI Integration
-    const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
-    const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+    const apiKey = getEnv("AI_INTEGRATIONS_OPENAI_API_KEY");
+    const baseURL = getEnv("AI_INTEGRATIONS_OPENAI_BASE_URL");
+
+    if (!apiKey || apiKey === "dummy-key") {
+      console.warn("WARNING: AI_INTEGRATIONS_OPENAI_API_KEY is missing or invalid.");
+    }
 
     openai = new OpenAI({
       apiKey: apiKey || "dummy-key",
-      baseURL: baseURL,
+      baseURL: baseURL || undefined,
     });
   }
   return openai;
