@@ -53,8 +53,8 @@ export function useAuth() {
       return res.json() as Promise<AuthResponse>;
     },
     onSuccess: (data) => {
+      console.log("Signup success", data);
       localStorage.setItem("authToken", data.token);
-      setLocation("/");
     },
   });
 
@@ -65,8 +65,8 @@ export function useAuth() {
       return res.json() as Promise<AuthResponse>;
     },
     onSuccess: (data) => {
+      console.log("Signup success", data);
       localStorage.setItem("authToken", data.token);
-      setLocation("/");
     },
   });
 

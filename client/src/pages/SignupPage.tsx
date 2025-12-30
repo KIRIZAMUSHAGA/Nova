@@ -43,11 +43,14 @@ export default function SignupPage() {
   const onSubmit = async (data: SignupFormData) => {
     try {
       await signup.mutateAsync(data);
+      console.log("Signup success, redirecting...");
       toast({
         title: "Succès",
         description: "Compte créé avec succès! Bienvenue.",
       });
+      setLocation("/");
     } catch (error: any) {
+      console.error("Signup error caught in component:", error);
       const message = error.message || "Erreur lors de la création du compte";
       toast({
         title: "Erreur",
