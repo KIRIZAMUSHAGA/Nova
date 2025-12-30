@@ -24,6 +24,7 @@ export interface IStorage {
   
   // WhatsApp Logs
   getWhatsappLogs(userId: string): Promise<WhatsappLogType[]>;
+  getRecentWhatsappHistory(userId: string, contactId: string, limit?: number): Promise<WhatsappLogType[]>;
   createWhatsappLog(log: any): Promise<WhatsappLogType>;
   
   // Users (Auth)
@@ -238,6 +239,21 @@ export class MongoStorage implements IStorage {
   async getWhatsappLogs(userId: string): Promise<WhatsappLogType[]> {
     const docs = await WhatsappLog.find({ userId }).sort({ createdAt: -1 });
     return docs.map(doc => ({
+      id: doc._id.toString() as any,
+      userId: doc.userId,
+      contactId: doc.contactId,
+      direction: doc.direction,
+      content: doc.content,
+      aiResponded: doc.aiResponded || false,
+      createdAt: doc.createdAt || new Date()
+    }));
+  }
+
+  async getRecentWhatsappHistory(userId: string, contactId: string, limit: number = 10): Promise<WhatsappLogType[]> {
+    const docs = await WhatsappLog.find({ userId, contactId })
+      .sort({ createdAt: -1 })
+      .limit(limit);
+    return docs.reverse().map(doc => ({
       id: doc._id.toString() as any,
       userId: doc.userId,
       contactId: doc.contactId,

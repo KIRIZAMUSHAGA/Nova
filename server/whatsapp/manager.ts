@@ -76,16 +76,23 @@ export class WhatsAppManager {
       if (msg.from.endsWith('@g.us')) return;
 
       try {
-        // 3. Génération de réponse par Nova (via le prompt système)
-        // Note: Dans une version plus avancée, on récupérera l'historique du contact
+        // 3. Génération de réponse par Nova (via le prompt système et historique)
         const { getOpenAI, SYSTEM_PROMPT } = await import('../routes');
         const openai = getOpenAI();
         const systemPrompt = SYSTEM_PROMPT;
+
+        // Récupérer l'historique récent pour ce contact
+        const history = await storage.getRecentWhatsappHistory(userId, contactId, 6);
+        const conversationContext = history.map(log => ({
+          role: log.direction === 'incoming' ? 'user' : 'assistant' as "user" | "assistant",
+          content: log.content
+        }));
 
         const response = await openai.chat.completions.create({
           model: "gpt-5",
           messages: [
             { role: "system", content: systemPrompt },
+            ...conversationContext,
             { role: "user", content }
           ],
         });
