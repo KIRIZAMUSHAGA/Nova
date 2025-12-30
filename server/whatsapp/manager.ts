@@ -5,144 +5,172 @@ import { storage } from '../storage';
 
 export class WhatsAppManager {
   private static instances: Map<string, any> = new Map();
+  // Resolvers pour attendre la génération du QR
+  private static qrResolvers: Map<string, { resolve: (value: string) => void; reject: (err: any) => void }> = new Map();
 
-  static async initializeClient(userId: string) {
+  static async initializeClient(userId: string): Promise<string> {
+    // Si le client existe déjà, on le retourne
     if (this.instances.has(userId)) {
-      return this.instances.get(userId);
+      console.log(`WhatsApp client already initialized for user ${userId}`);
+      const session = await storage.getWhatsappSession(userId);
+      return session?.qrCode || '';
     }
 
-    const client = new Client({
-      authStrategy: new LocalAuth({ clientId: userId }),
-      puppeteer: {
-        headless: true,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
-          '--no-first-run',
-          '--no-zygote',
-          '--disable-gpu',
-          '--disable-extensions'
-        ],
-        handleSIGTERM: false,
-      }
-    });
+    // Créer une Promise pour attendre le QR
+    return new Promise((resolve, reject) => {
+      // IIFE asynchrone pour gérer l'initialisation
+      (async () => {
+        // Stocker les resolvers
+        this.qrResolvers.set(userId, { resolve, reject });
 
-    client.on('qr', async (qr) => {
-      try {
-        const qrDataUrl = await qrcode.toDataURL(qr);
-        await storage.upsertWhatsappSession({
-          userId,
-          status: 'qr_ready',
-          qrCode: qrDataUrl,
-        });
-        console.log(`QR Code generated and saved for user ${userId}`);
-      } catch (err) {
-        console.error(`Error saving QR code for user ${userId}:`, err);
-      }
-    });
+        // Timeout de sécurité : 10 secondes
+        const timeoutId = setTimeout(() => {
+          this.qrResolvers.delete(userId);
+          reject(new Error(`QR Code generation timeout for user ${userId}`));
+        }, 10000);
 
-    client.on('ready', async () => {
-      await storage.upsertWhatsappSession({
-        userId,
-        status: 'connected',
-        qrCode: null,
-      });
-      console.log(`WhatsApp client ready for user ${userId}`);
-    });
-
-    client.on('disconnected', async (reason) => {
-      await storage.upsertWhatsappSession({
-        userId,
-        status: 'disconnected',
-        qrCode: null,
-        lastError: reason,
-      });
-      this.instances.delete(userId);
-      console.log(`WhatsApp client disconnected for user ${userId}: ${reason}`);
-    });
-
-    client.on('auth_failure', async (msg) => {
-      await storage.upsertWhatsappSession({
-        userId,
-        status: 'disconnected',
-        lastError: msg,
-      });
-      console.log(`WhatsApp auth failure for user ${userId}: ${msg}`);
-    });
-
-    client.on('message', async (msg) => {
-      // 1. Identification du contact
-      const contactId = msg.from;
-      const content = msg.body;
-
-      // Journaliser le message entrant
-      await storage.createWhatsappLog({
-        userId,
-        contactId,
-        direction: 'incoming',
-        content,
-      });
-
-      // 2. Vérification des règles (Exemple simple : ne pas répondre aux groupes pour l'instant)
-      if (msg.from.endsWith('@g.us')) return;
-
-      try {
-        // 3. Génération de réponse par Nova (via le prompt système et historique)
-        const { getOpenAI, SYSTEM_PROMPT } = await import('../routes');
-        const openai = getOpenAI();
-        const systemPrompt = SYSTEM_PROMPT;
-
-        // Récupérer l'historique récent pour ce contact
-        const history = await storage.getRecentWhatsappHistory(userId, contactId, 6);
-        const conversationContext = history.map(log => ({
-          role: log.direction === 'incoming' ? 'user' : 'assistant' as "user" | "assistant",
-          content: log.content
-        }));
-
-        const response = await openai.chat.completions.create({
-          model: "gpt-5",
-          messages: [
-            { role: "system", content: systemPrompt },
-            ...conversationContext,
-            { role: "user", content }
-          ],
+        const client = new Client({
+          authStrategy: new LocalAuth({ clientId: userId }),
+          puppeteer: {
+            headless: true,
+            args: [
+              '--no-sandbox',
+              '--disable-setuid-sandbox',
+              '--disable-dev-shm-usage',
+              '--disable-accelerated-2d-canvas',
+              '--no-first-run',
+              '--no-zygote',
+              '--disable-gpu',
+              '--disable-extensions'
+            ],
+            handleSIGTERM: false,
+          }
         });
 
-        const aiResponse = response.choices[0].message.content;
+        client.on('qr', async (qr) => {
+          try {
+            const qrDataUrl = await qrcode.toDataURL(qr);
+            await storage.upsertWhatsappSession({
+              userId,
+              status: 'qr_ready',
+              qrCode: qrDataUrl,
+            });
+            console.log(`QR Code generated and saved for user ${userId}`);
+            
+            // Résoudre la Promise dès que le QR est généré et sauvegardé
+            clearTimeout(timeoutId);
+            const resolver = this.qrResolvers.get(userId);
+            if (resolver) {
+              this.qrResolvers.delete(userId);
+              resolver.resolve(qrDataUrl);
+            }
+          } catch (err) {
+            console.error(`Error saving QR code for user ${userId}:`, err);
+            clearTimeout(timeoutId);
+            const resolver = this.qrResolvers.get(userId);
+            if (resolver) {
+              this.qrResolvers.delete(userId);
+              resolver.reject(err);
+            }
+          }
+        });
 
-        if (aiResponse) {
-          // 4. Envoi via la session active
-          await client.sendMessage(contactId, aiResponse);
+        client.on('ready', async () => {
+          await storage.upsertWhatsappSession({
+            userId,
+            status: 'connected',
+            qrCode: null,
+          });
+          console.log(`WhatsApp client ready for user ${userId}`);
+        });
 
-          // Journaliser la réponse
+        client.on('disconnected', async (reason) => {
+          await storage.upsertWhatsappSession({
+            userId,
+            status: 'disconnected',
+            qrCode: null,
+            lastError: reason,
+          });
+          this.instances.delete(userId);
+          console.log(`WhatsApp client disconnected for user ${userId}: ${reason}`);
+        });
+
+        client.on('auth_failure', async (msg) => {
+          await storage.upsertWhatsappSession({
+            userId,
+            status: 'disconnected',
+            lastError: msg,
+          });
+          console.log(`WhatsApp auth failure for user ${userId}: ${msg}`);
+        });
+
+        client.on('message', async (msg) => {
+          const contactId = msg.from;
+          const content = msg.body;
+
           await storage.createWhatsappLog({
             userId,
             contactId,
-            direction: 'outgoing',
-            content: aiResponse,
-            aiResponded: true,
+            direction: 'incoming',
+            content,
+          });
+
+          if (msg.from.endsWith('@g.us')) return;
+
+          try {
+            const { getOpenAI, SYSTEM_PROMPT } = await import('../routes');
+            const openai = getOpenAI();
+            const history = await storage.getRecentWhatsappHistory(userId, contactId, 6);
+            const conversationContext = history.map(log => ({
+              role: log.direction === 'incoming' ? 'user' : 'assistant' as "user" | "assistant",
+              content: log.content
+            }));
+
+            const response = await openai.chat.completions.create({
+              model: "gpt-5",
+              messages: [
+                { role: "system", content: SYSTEM_PROMPT },
+                ...conversationContext,
+                { role: "user", content }
+              ],
+            });
+
+            const aiResponse = response.choices[0].message.content;
+
+            if (aiResponse) {
+              await client.sendMessage(contactId, aiResponse);
+              await storage.createWhatsappLog({
+                userId,
+                contactId,
+                direction: 'outgoing',
+                content: aiResponse,
+                aiResponded: true,
+              });
+            }
+          } catch (error) {
+            console.error(`Error processing WhatsApp message for user ${userId}:`, error);
+          }
+        });
+
+        try {
+          await client.initialize();
+          this.instances.set(userId, client);
+        } catch (error: any) {
+          console.error(`Failed to initialize WhatsApp client for ${userId}:`, error);
+          clearTimeout(timeoutId);
+          const resolver = this.qrResolvers.get(userId);
+          if (resolver) {
+            this.qrResolvers.delete(userId);
+            resolver.reject(error);
+          }
+          await storage.upsertWhatsappSession({
+            userId,
+            status: 'disconnected',
+            lastError: error.message,
           });
         }
-      } catch (error) {
-        console.error(`Error processing WhatsApp message for user ${userId}:`, error);
-      }
+      })();
     });
-
-    try {
-      await client.initialize();
-      this.instances.set(userId, client);
-    } catch (error: any) {
-      console.error(`Failed to initialize WhatsApp client for ${userId}:`, error);
-      await storage.upsertWhatsappSession({
-        userId,
-        status: 'disconnected',
-        lastError: error.message,
-      });
-    }
-
-    return client;
   }
 
   static getClient(userId: string) {

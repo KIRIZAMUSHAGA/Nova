@@ -96,9 +96,38 @@ export async function registerRoutes(
 
   app.post("/api/whatsapp/connect", authMiddleware, async (req: AuthRequest, res) => {
     try {
-      WhatsAppManager.initializeClient(req.user!.userId).catch(console.error);
-      res.json({ message: "Initialization started" });
+      const userId = req.user!.userId;
+      
+      // Attendre que le QR Code soit généré et sauvegardé
+      // initializeClient retourne une Promise résolue quand le QR est disponible
+      try {
+        await WhatsAppManager.initializeClient(userId);
+      } catch (initError: any) {
+        // Si timeout ou erreur d'initialisation, retourner une erreur claire
+        if (initError.message.includes('timeout')) {
+          return res.status(408).json({ 
+            message: "QR Code generation timeout",
+            error: "QR_TIMEOUT"
+          });
+        }
+        console.error(`WhatsApp initialization error for user ${userId}:`, initError);
+      }
+      
+      // Récupérer la session avec le QR Code maintenant disponible
+      const session = await storage.getWhatsappSession(userId);
+      
+      if (session && session.qrCode) {
+        // Retourner la session complète avec le QR
+        res.json(session);
+      } else {
+        // En cas de problème, retourner un statut d'erreur
+        res.status(500).json({ 
+          message: "Failed to generate QR Code",
+          error: "QR_GENERATION_FAILED"
+        });
+      }
     } catch (error) {
+      console.error("WhatsApp connect endpoint error:", error);
       res.status(500).json({ message: "Failed to start connection" });
     }
   });
