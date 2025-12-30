@@ -15,6 +15,7 @@ export const messages = pgTable("messages", {
   threadId: text("thread_id").notNull(),
   role: text("role").notNull(), // 'user', 'assistant', 'system'
   content: text("content").notNull(),
+  attachment: text("attachment"), // URL or path to attached file
   metadata: jsonb("metadata"), // For extra context or reasoning steps if needed
   createdAt: timestamp("created_at").defaultNow(),
 });

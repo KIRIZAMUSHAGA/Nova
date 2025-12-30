@@ -59,14 +59,16 @@ export function useSendMessage() {
     mutationFn: async ({ 
       threadId, 
       content,
+      attachment,
       onChunk 
     }: { 
       threadId: string; 
       content: string;
+      attachment?: string;
       onChunk?: (chunk: string) => void;
     }) => {
       const url = api.messages.create.path.replace(":id", threadId);
-      const res = await apiRequest(api.messages.create.method, url, { content });
+      const res = await apiRequest(api.messages.create.method, url, { content, attachment });
       
       const reader = res.body?.getReader();
       const decoder = new TextDecoder();

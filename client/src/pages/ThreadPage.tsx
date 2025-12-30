@@ -16,13 +16,14 @@ export default function ThreadPage() {
   const { data: messages = [], isLoading: isLoadingMessages } = useMessages(threadId);
   const sendMessage = useSendMessage();
 
-  const handleSend = async (content: string) => {
+  const handleSend = async (content: string, attachment?: string) => {
     if (!threadId) return;
     setStreamingMessage("");
     try {
       await sendMessage.mutateAsync({ 
         threadId, 
         content,
+        attachment,
         onChunk: (chunk) => setStreamingMessage(prev => (prev || "") + chunk)
       });
     } catch (error) {

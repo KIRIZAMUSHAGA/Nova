@@ -309,13 +309,14 @@ export async function registerRoutes(
   app.post(api.messages.create.path, authMiddleware, async (req: AuthRequest, res) => {
     try {
       const threadId = req.params.id;
-      const { content } = api.messages.create.input.parse(req.body);
+      const { content, attachment } = req.body; // Allow attachment
 
       // 1. Save user message
       const userMessage = await storage.createMessage({
         threadId,
         role: "user",
         content,
+        attachment,
       });
 
       // ✅ HARDCODED RESPONSE FOR CREATOR QUESTION (INTERCEPT BEFORE OPENAI)
