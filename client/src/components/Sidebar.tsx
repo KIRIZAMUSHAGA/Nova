@@ -21,7 +21,10 @@ import {
   LogOut,
   MessageCircle,
   RefreshCw,
-  Power
+  Power,
+  History,
+  ArrowDownLeft,
+  ArrowUpRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -35,6 +38,8 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -49,16 +54,23 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [isChatsExpanded, setIsChatsExpanded] = React.useState(true);
   const [deferredPrompt, setDeferredPrompt] = React.useState<any>(null);
   const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = React.useState(false);
+  const [showLogs, setShowLogs] = React.useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: whatsappSession, isLoading: isSessionLoading } = useQuery({
+  const { data: whatsappSession, isLoading: isSessionLoading } = useQuery<any>({
     queryKey: ['/api/whatsapp/session'],
     enabled: isWhatsAppModalOpen,
     refetchInterval: (query) => {
-      const status = query.state.data?.status;
+      const status = (query.state.data as any)?.status;
       return (status === 'qr_ready' || status === 'disconnected') ? 3000 : false;
     }
+  });
+
+  const { data: whatsappLogs } = useQuery<any[]>({
+    queryKey: ['/api/whatsapp/logs'],
+    enabled: isWhatsAppModalOpen && showLogs,
+    refetchInterval: 5000
   });
 
   const connectMutation = useMutation({
@@ -190,76 +202,138 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     </span>
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Gestion WhatsApp</DialogTitle>
-                  </DialogHeader>
-                  <div className="flex flex-col items-center gap-6 py-6">
-                    {whatsappSession?.status === 'connected' ? (
-                      <div className="text-center space-y-4">
-                        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                          <MessageCircle className="w-10 h-10 text-green-600" />
-                        </div>
-                        <div className="space-y-1">
-                          <h3 className="font-bold text-lg">Nova est actif</h3>
-                          <p className="text-sm text-muted-foreground">Votre compte est lié et répondra automatiquement aux messages.</p>
-                        </div>
+                <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col p-0 overflow-hidden">
+                  <DialogHeader className="p-6 pb-2">
+                    <DialogTitle className="flex items-center justify-between">
+                      <span>Gestion WhatsApp</span>
+                      {whatsappSession?.status === 'connected' && (
                         <Button 
-                          variant="destructive" 
-                          onClick={() => logoutMutation.mutate()}
-                          disabled={logoutMutation.isPending}
-                          className="w-full gap-2"
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => setShowLogs(!showLogs)}
+                          className="gap-2 h-8"
                         >
-                          <Power className="w-4 h-4" />
-                          Déconnecter l'appareil
+                          <History className="w-4 h-4" />
+                          {showLogs ? "Masquer Historique" : "Voir Historique"}
                         </Button>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="w-48 h-48 bg-white p-2 rounded-xl shadow-inner flex items-center justify-center border-2 border-dashed border-muted relative overflow-hidden">
-                          {isSessionLoading || connectMutation.isPending ? (
-                            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                          ) : whatsappSession?.qrCode ? (
-                            <img src={whatsappSession.qrCode} alt="WhatsApp QR Code" className="w-full h-full object-contain" />
-                          ) : (
-                            <div className="text-center space-y-2 text-muted-foreground p-4">
-                              <MessageCircle className="w-12 h-12 mx-auto opacity-20" />
-                              <p className="text-xs italic">Prêt pour la connexion</p>
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                onClick={() => connectMutation.mutate()}
-                                className="mt-2 h-8"
-                              >
-                                Générer QR Code
-                              </Button>
+                      )}
+                    </DialogTitle>
+                  </DialogHeader>
+
+                  <ScrollArea className="flex-1 px-6 pb-6">
+                    <div className="flex flex-col items-center gap-6 py-4">
+                      {whatsappSession?.status === 'connected' ? (
+                        showLogs ? (
+                          <div className="w-full space-y-4">
+                            <h3 className="font-bold text-sm flex items-center gap-2">
+                              <History className="w-4 h-4 text-primary" />
+                              Dernières interactions Nova
+                            </h3>
+                            <div className="space-y-3">
+                              {whatsappLogs?.length === 0 ? (
+                                <p className="text-center py-8 text-muted-foreground italic text-sm">Aucun message pour le moment</p>
+                              ) : (
+                                whatsappLogs?.map((log: any) => (
+                                  <div key={log.id} className="p-3 rounded-lg border border-border/50 bg-muted/20 space-y-1">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                                        {log.direction === 'incoming' ? (
+                                          <><ArrowDownLeft className="w-3 h-3 text-blue-500" /> Reçu de {log.contactId.split('@')[0]}</>
+                                        ) : (
+                                          <><ArrowUpRight className="w-3 h-3 text-green-500" /> Envoyé par Nova</>
+                                        )}
+                                      </span>
+                                      <span className="text-[10px] text-muted-foreground/60">
+                                        {format(new Date(log.createdAt), "HH:mm", { locale: fr })}
+                                      </span>
+                                    </div>
+                                    <p className="text-sm leading-relaxed">{log.content}</p>
+                                  </div>
+                                ))
+                              )}
                             </div>
-                          )}
-                        </div>
-                        
-                        <div className="space-y-4 text-sm w-full">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-bold">Instructions</h4>
                             <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-8 w-8"
-                              onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/session'] })}
+                              variant="outline" 
+                              className="w-full h-10 rounded-xl"
+                              onClick={() => setShowLogs(false)}
                             >
-                              <RefreshCw className="h-4 h-4" />
+                              Retour à la gestion
                             </Button>
                           </div>
-                          <ol className="space-y-2 list-decimal list-inside text-muted-foreground bg-muted/30 p-4 rounded-lg">
-                            <li>Ouvrez WhatsApp sur votre téléphone</li>
-                            <li>Appuyez sur <span className="font-semibold text-foreground">Menu</span> ou <span className="font-semibold text-foreground">Réglages</span></li>
-                            <li>Sélectionnez <span className="font-semibold text-foreground">Appareils liés</span></li>
-                            <li>Appuyez sur <span className="font-semibold text-foreground">Lier un appareil</span></li>
-                            <li>Scannez le code QR ci-dessus</li>
-                          </ol>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                        ) : (
+                          <div className="text-center space-y-4 w-full">
+                            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto shadow-sm">
+                              <MessageCircle className="w-10 h-10 text-green-600" />
+                            </div>
+                            <div className="space-y-1 px-4">
+                              <h3 className="font-bold text-lg text-foreground">Nova est actif</h3>
+                              <p className="text-sm text-muted-foreground">Votre compte répondra automatiquement selon vos règles de sécurité.</p>
+                            </div>
+                            <div className="grid grid-cols-1 gap-3 w-full">
+                              <Button 
+                                variant="destructive" 
+                                onClick={() => logoutMutation.mutate()}
+                                disabled={logoutMutation.isPending}
+                                className="w-full gap-2 h-11 rounded-xl shadow-lg shadow-destructive/10"
+                              >
+                                <Power className="w-4 h-4" />
+                                Déconnecter l'appareil
+                              </Button>
+                            </div>
+                          </div>
+                        )
+                      ) : (
+                        <>
+                          <div className="w-56 h-56 bg-white p-3 rounded-2xl shadow-xl flex items-center justify-center border-2 border-dashed border-primary/20 relative overflow-hidden group">
+                            {isSessionLoading || connectMutation.isPending ? (
+                              <div className="flex flex-col items-center gap-2">
+                                <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                                <span className="text-[10px] font-medium text-muted-foreground">Préparation...</span>
+                              </div>
+                            ) : whatsappSession?.qrCode ? (
+                              <img src={whatsappSession.qrCode} alt="WhatsApp QR Code" className="w-full h-full object-contain" />
+                            ) : (
+                              <div className="text-center space-y-3 text-muted-foreground p-4">
+                                <MessageCircle className="w-12 h-12 mx-auto opacity-10" />
+                                <p className="text-xs font-medium">Session prête à être initialisée</p>
+                                <Button 
+                                  size="sm" 
+                                  variant="primary" 
+                                  onClick={() => connectMutation.mutate()}
+                                  className="mt-2 h-9 rounded-xl shadow-lg shadow-primary/20"
+                                >
+                                  Générer QR Code
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="space-y-4 text-sm w-full">
+                            <div className="flex items-center justify-between px-2">
+                              <h4 className="font-bold tracking-tight">Instructions de liaison</h4>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 rounded-lg hover:bg-primary/5 text-primary"
+                                onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/whatsapp/session'] })}
+                              >
+                                <RefreshCw className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <ol className="space-y-3 list-decimal list-inside text-muted-foreground bg-muted/30 p-5 rounded-2xl border border-border/50">
+                              <li>Ouvrez <span className="font-semibold text-foreground">WhatsApp</span> sur votre téléphone</li>
+                              <li>Allez dans <span className="font-semibold text-foreground">Réglages</span> / <span className="font-semibold text-foreground">Appareils liés</span></li>
+                              <li>Sélectionnez <span className="font-semibold text-foreground">Lier un appareil</span></li>
+                              <li>Scannez le <span className="font-bold text-primary">code QR</span> ci-dessus</li>
+                            </ol>
+                            <p className="text-[11px] text-center text-muted-foreground/60 px-6 italic">
+                              En liant votre appareil, vous autorisez Nova à répondre en votre nom selon le protocole de sécurité établi.
+                            </p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </ScrollArea>
                 </DialogContent>
               </Dialog>
 

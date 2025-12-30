@@ -112,6 +112,15 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/whatsapp/logs", authMiddleware, async (req: AuthRequest, res) => {
+    try {
+      const logs = await storage.getWhatsappLogs(req.user!.userId);
+      res.json(logs);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch logs" });
+    }
+  });
+
   // Register object storage routes
   registerObjectStorageRoutes(app);
 
