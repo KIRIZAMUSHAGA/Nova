@@ -1,5 +1,10 @@
-import { Thread, Message, User } from "./mongodb";
-import { type Thread as ThreadType, type Message as MessageType } from "@shared/schema";
+import { Thread, Message, User, WhatsappSession, WhatsappLog } from "./mongodb";
+import { 
+  type Thread as ThreadType, 
+  type Message as MessageType,
+  type WhatsappSession as WhatsappSessionType,
+  type WhatsappLog as WhatsappLogType
+} from "@shared/schema";
 import { type User as UserType } from "@shared/auth-schema";
 
 export interface IStorage {
@@ -12,6 +17,14 @@ export interface IStorage {
   // Messages
   getMessages(threadId: string): Promise<MessageType[]>;
   createMessage(message: any): Promise<MessageType>;
+  
+  // WhatsApp Sessions
+  getWhatsappSession(userId: string): Promise<WhatsappSessionType | undefined>;
+  upsertWhatsappSession(session: Partial<WhatsappSessionType> & { userId: string }): Promise<WhatsappSessionType>;
+  
+  // WhatsApp Logs
+  getWhatsappLogs(userId: string): Promise<WhatsappLogType[]>;
+  createWhatsappLog(log: any): Promise<WhatsappLogType>;
   
   // Users (Auth)
   createUser(email: string, passwordHash: string): Promise<UserType>;
@@ -187,6 +200,65 @@ export class MongoStorage implements IStorage {
     } catch {
       return null;
     }
+  }
+
+  // WhatsApp Session Methods
+  async getWhatsappSession(userId: string): Promise<WhatsappSessionType | undefined> {
+    try {
+      const doc = await WhatsappSession.findOne({ userId });
+      return doc ? {
+        userId: doc.userId,
+        status: doc.status,
+        qrCode: doc.qrCode || null,
+        lastError: doc.lastError || null,
+        updatedAt: doc.updatedAt || new Date()
+      } : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async upsertWhatsappSession(session: Partial<WhatsappSessionType> & { userId: string }): Promise<WhatsappSessionType> {
+    const doc = await WhatsappSession.findOneAndUpdate(
+      { userId: session.userId },
+      { ...session, updatedAt: new Date() },
+      { upsert: true, new: true }
+    );
+    return {
+      userId: doc.userId,
+      status: doc.status,
+      qrCode: doc.qrCode || null,
+      lastError: doc.lastError || null,
+      updatedAt: doc.updatedAt || new Date()
+    };
+  }
+
+  // WhatsApp Log Methods
+  async getWhatsappLogs(userId: string): Promise<WhatsappLogType[]> {
+    const docs = await WhatsappLog.find({ userId }).sort({ createdAt: -1 });
+    return docs.map(doc => ({
+      id: doc._id.toString() as any,
+      userId: doc.userId,
+      contactId: doc.contactId,
+      direction: doc.direction,
+      content: doc.content,
+      aiResponded: doc.aiResponded || false,
+      createdAt: doc.createdAt || new Date()
+    }));
+  }
+
+  async createWhatsappLog(log: any): Promise<WhatsappLogType> {
+    const doc = new WhatsappLog(log);
+    await doc.save();
+    return {
+      id: doc._id.toString() as any,
+      userId: doc.userId,
+      contactId: doc.contactId,
+      direction: doc.direction,
+      content: doc.content,
+      aiResponded: doc.aiResponded || false,
+      createdAt: doc.createdAt || new Date()
+    };
   }
 }
 

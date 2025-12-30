@@ -42,3 +42,23 @@ const userSchema = new mongoose.Schema({
 export const Thread = mongoose.model("Thread", threadSchema);
 export const Message = mongoose.model("Message", messageSchema);
 export const User = mongoose.model("User", userSchema);
+
+const whatsappSessionSchema = new mongoose.Schema({
+  userId: { type: String, required: true, unique: true },
+  status: { type: String, required: true, default: 'disconnected' },
+  qrCode: { type: String, default: null },
+  lastError: { type: String, default: null },
+  updatedAt: { type: Date, default: Date.now },
+});
+
+const whatsappLogSchema = new mongoose.Schema({
+  userId: { type: String, required: true },
+  contactId: { type: String, required: true },
+  direction: { type: String, required: true },
+  content: { type: String, required: true },
+  aiResponded: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now },
+});
+
+export const WhatsappSession = mongoose.model("WhatsappSession", whatsappSessionSchema);
+export const WhatsappLog = mongoose.model("WhatsappLog", whatsappLogSchema);
