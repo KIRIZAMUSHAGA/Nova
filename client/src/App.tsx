@@ -50,12 +50,14 @@ function SplashScreen() {
 
 function Router() {
   return (
-    <Switch>
-      <Route path="/" component={HomePage} />
-      <Route path="/thread/:id" component={ThreadPage} />
-      <Route path="/about" component={AboutPage} />
-      <Route component={NotFound} />
-    </Switch>
+    <div className="flex-1 relative overflow-hidden flex flex-col h-full">
+      <Switch>
+        <Route path="/" component={HomePage} />
+        <Route path="/thread/:id" component={ThreadPage} />
+        <Route path="/about" component={AboutPage} />
+        <Route component={NotFound} />
+      </Switch>
+    </div>
   );
 }
 
@@ -78,9 +80,9 @@ export default function App() {
         <div className="flex h-screen w-full bg-background text-foreground overflow-hidden selection:bg-primary/20">
           <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
           
-          <main className="flex-1 relative overflow-hidden flex flex-col">
+          <main className="flex-1 relative overflow-hidden flex flex-col h-full">
             {/* Header with Burger Menu */}
-            <header className="h-14 border-b border-border/50 flex items-center px-4 lg:hidden">
+            <header className="h-14 border-b border-border/50 flex items-center px-4 md:hidden shrink-0">
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -92,7 +94,9 @@ export default function App() {
               <h1 className="ml-4 font-display font-bold text-lg">Nova AI</h1>
             </header>
 
-            <Router />
+            <div className="flex-1 overflow-hidden relative h-full">
+              <Router />
+            </div>
             <Toaster />
           </main>
         </div>

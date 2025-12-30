@@ -18,7 +18,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-6 text-center z-0 relative overflow-y-auto w-full h-full">
+    <div className="flex-1 flex flex-col items-center justify-center p-6 text-center z-0 relative overflow-y-auto w-full h-full min-h-[calc(100vh-4rem)] md:min-h-screen">
       {/* Main background glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-primary/10 rounded-full blur-[120px] -z-10" />
       
