@@ -3,7 +3,7 @@ import { Message } from "@shared/schema";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ReactMarkdown from "react-markdown";
 import { cn } from "@/lib/utils";
-import { Bot, User, Sparkles } from "lucide-react";
+import { Bot, User, Sparkles, Paperclip, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface MessageListProps {
@@ -58,7 +58,38 @@ export function MessageList({ messages, isLoading, streamingMessage }: MessageLi
                     : "bg-card text-card-foreground rounded-tl-sm border border-border/50"
                 )}>
                   {isUser ? (
-                    <div className="whitespace-pre-wrap font-medium">{message.content}</div>
+                    <div className="whitespace-pre-wrap font-medium">
+                      {message.content}
+                      {message.attachment && (
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <div className="group relative flex items-center gap-3 p-3 rounded-xl bg-background/40 border border-white/5 hover:border-primary/50 transition-all duration-300">
+                            {message.attachment.match(/\.(jpg|jpeg|png|gif|webp)$/i) || message.attachment.startsWith("/objects/") ? (
+                              <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-white/10">
+                                <img src={message.attachment} alt="Attachment" className="w-full h-full object-cover" />
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary">
+                                <Paperclip className="w-5 h-5" />
+                              </div>
+                            )}
+                            <div className="flex flex-col">
+                              <span className="text-xs font-medium text-foreground/70 truncate max-w-[150px]">
+                                {message.attachment.split("/").pop()}
+                              </span>
+                              <a 
+                                href={message.attachment} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="mt-1 flex items-center gap-1.5 text-[10px] text-primary hover:underline font-bold uppercase tracking-widest"
+                              >
+                                <Download className="w-3 h-3" />
+                                Download
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <div className="prose prose-invert prose-p:leading-relaxed prose-pre:bg-muted/50 prose-pre:border prose-pre:border-border/50 max-w-none">
                       <ReactMarkdown>{message.content}</ReactMarkdown>

@@ -25,6 +25,7 @@ const messageSchema = new mongoose.Schema({
   threadId: { type: String, required: true },
   role: { type: String, required: true },
   content: { type: String, required: true },
+  attachment: { type: String, default: null },
   metadata: { type: mongoose.Schema.Types.Mixed, default: null },
   createdAt: { type: Date, default: Date.now },
 });
