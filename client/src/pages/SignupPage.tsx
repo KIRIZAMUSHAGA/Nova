@@ -11,13 +11,17 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 
 const signupSchema = z.object({
-  email: z.string().email("Email invalide"),
+  email: z.string().email("Email invalide").optional().or(z.literal("")),
+  phoneNumber: z.string().regex(/^[0-9+\-\s()]+$/, "Format invalide").optional().or(z.literal("")),
   password: z.string().min(8, "Au moins 8 caractères"),
   confirmPassword: z.string(),
 }).refine(data => data.password === data.confirmPassword, {
   message: "Les mots de passe ne correspondent pas",
   path: ["confirmPassword"],
-});
+}).refine(
+  data => data.email || data.phoneNumber,
+  { message: "Email ou numéro de téléphone requis", path: ["email"] }
+);
 
 type SignupFormData = z.infer<typeof signupSchema>;
 
@@ -30,6 +34,7 @@ export default function SignupPage() {
     resolver: zodResolver(signupSchema),
     defaultValues: {
       email: "",
+      phoneNumber: "",
       password: "",
       confirmPassword: "",
     },
@@ -92,7 +97,7 @@ export default function SignupPage() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Email (optionnel)</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="votre@email.com"
@@ -100,6 +105,26 @@ export default function SignupPage() {
                       autoComplete="email"
                       {...field}
                       data-testid="input-email"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="phoneNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Numéro de téléphone (optionnel)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="+33 6 12 34 56 78"
+                      type="tel"
+                      autoComplete="tel"
+                      {...field}
+                      data-testid="input-phone"
                     />
                   </FormControl>
                   <FormMessage />

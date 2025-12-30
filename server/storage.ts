@@ -15,7 +15,9 @@ export interface IStorage {
   
   // Users (Auth)
   createUser(email: string, passwordHash: string): Promise<UserType>;
+  createUserWithEmailOrPhone(email: string | null, phone: string | null, passwordHash: string): Promise<UserType>;
   getUserByEmail(email: string): Promise<UserType | null>;
+  getUserByPhone(phoneNumber: string): Promise<UserType | null>;
   getUserById(id: string): Promise<UserType | null>;
   
   // Replit Chat Integration compatibility
@@ -142,9 +144,35 @@ export class MongoStorage implements IStorage {
     return this.mapUser(user);
   }
 
+  async createUserWithEmailOrPhone(
+    email: string | null,
+    phoneNumber: string | null,
+    passwordHash: string
+  ): Promise<UserType> {
+    const user = new User({
+      email: email ? email.toLowerCase() : undefined,
+      phoneNumber: phoneNumber || undefined,
+      passwordHash,
+      createdAt: new Date(),
+      plan: "free",
+      quotaUsed: 0,
+    });
+    await user.save();
+    return this.mapUser(user);
+  }
+
   async getUserByEmail(email: string): Promise<UserType | null> {
     try {
       const user = await User.findOne({ email: email.toLowerCase() });
+      return user ? this.mapUser(user) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  async getUserByPhone(phoneNumber: string): Promise<UserType | null> {
+    try {
+      const user = await User.findOne({ phoneNumber });
       return user ? this.mapUser(user) : null;
     } catch {
       return null;

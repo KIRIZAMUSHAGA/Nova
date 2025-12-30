@@ -87,7 +87,7 @@ export async function registerRoutes(
 
   // ============ AUTH ENDPOINTS ============
   
-  // Signup endpoint
+  // Signup endpoint (supports email OR phone)
   app.post("/api/auth/signup", async (req, res) => {
     try {
       const parsed = signupSchema.safeParse(req.body);
@@ -100,27 +100,43 @@ export async function registerRoutes(
         return;
       }
 
-      const { email, password } = parsed.data;
+      const { email, phoneNumber, password } = parsed.data;
+      const normalizedEmail = email?.toLowerCase().trim() || null;
+      const normalizedPhone = phoneNumber?.trim() || null;
 
-      // Check if user already exists
-      const existingUser = await storage.getUserByEmail(email);
-      if (existingUser) {
-        res.status(409).json({ message: "Email already registered" });
-        return;
+      // Check if user already exists (by email or phone)
+      if (normalizedEmail) {
+        const existingEmail = await storage.getUserByEmail(normalizedEmail);
+        if (existingEmail) {
+          res.status(409).json({ message: "Email already registered" });
+          return;
+        }
+      }
+      if (normalizedPhone) {
+        const existingPhone = await storage.getUserByPhone(normalizedPhone);
+        if (existingPhone) {
+          res.status(409).json({ message: "Phone number already registered" });
+          return;
+        }
       }
 
       // Hash password and create user
       const passwordHash = await hashPassword(password);
-      const user = await storage.createUser(email, passwordHash);
+      const user = await storage.createUserWithEmailOrPhone(
+        normalizedEmail,
+        normalizedPhone,
+        passwordHash
+      );
 
-      // Generate JWT token
-      const token = generateToken(user.id, user.email);
+      // Generate JWT token - use email or phone for display
+      const displayIdentifier = normalizedEmail || normalizedPhone || "User";
+      const token = generateToken(user.id, displayIdentifier);
 
       res.status(201).json({
         token,
         user: {
           id: user.id,
-          email: user.email,
+          email: user.email || user.phoneNumber,
         },
       });
     } catch (error: any) {
@@ -129,7 +145,7 @@ export async function registerRoutes(
     }
   });
 
-  // Login endpoint
+  // Login endpoint (accepts email OR phone)
   app.post("/api/auth/login", async (req, res) => {
     try {
       const parsed = loginSchema.safeParse(req.body);
@@ -142,36 +158,42 @@ export async function registerRoutes(
         return;
       }
 
-      const { email, password } = parsed.data;
+      const { emailOrPhone, password } = parsed.data;
+      const normalizedInput = emailOrPhone.toLowerCase().trim();
 
-      // Find user
-      const user = await storage.getUserByEmail(email);
+      // Find user by email OR phone
+      let user = await storage.getUserByEmail(normalizedInput);
       if (!user) {
-        res.status(401).json({ message: "Invalid email or password" });
+        user = await storage.getUserByPhone(normalizedInput);
+      }
+
+      if (!user) {
+        res.status(401).json({ message: "Invalid email/phone or password" });
         return;
       }
 
       // Check password
       const userDoc = await (require("./mongodb")).User.findById(user.id);
       if (!userDoc) {
-        res.status(401).json({ message: "Invalid email or password" });
+        res.status(401).json({ message: "Invalid email/phone or password" });
         return;
       }
 
       const passwordMatch = await comparePassword(password, userDoc.passwordHash);
       if (!passwordMatch) {
-        res.status(401).json({ message: "Invalid email or password" });
+        res.status(401).json({ message: "Invalid email/phone or password" });
         return;
       }
 
       // Generate JWT token
-      const token = generateToken(user.id, user.email);
+      const displayIdentifier = user.email || user.phoneNumber || "User";
+      const token = generateToken(user.id, displayIdentifier);
 
       res.status(200).json({
         token,
         user: {
           id: user.id,
-          email: user.email,
+          email: user.email || user.phoneNumber,
         },
       });
     } catch (error: any) {

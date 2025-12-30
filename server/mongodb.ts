@@ -29,7 +29,8 @@ const messageSchema = new mongoose.Schema({
 });
 
 const userSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true, lowercase: true },
+  email: { type: String, unique: true, sparse: true, lowercase: true },
+  phoneNumber: { type: String, unique: true, sparse: true },
   passwordHash: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
   plan: { type: String, default: "free" },

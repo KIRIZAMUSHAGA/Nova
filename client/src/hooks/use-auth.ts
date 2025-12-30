@@ -4,7 +4,8 @@ import { useLocation } from "wouter";
 
 interface User {
   id: string;
-  email: string;
+  email?: string;
+  phoneNumber?: string;
 }
 
 interface AuthResponse {
@@ -35,15 +36,17 @@ export function useAuth() {
     retry: false,
   });
 
-  // Signup mutation
+  // Signup mutation (supports email OR phone)
   const signupMutation = useMutation({
     mutationFn: async (data: {
-      email: string;
+      email?: string;
+      phoneNumber?: string;
       password: string;
       confirmPassword: string;
     }) => {
       const res = await apiRequest("POST", "/api/auth/signup", {
-        email: data.email,
+        email: data.email || "",
+        phoneNumber: data.phoneNumber || "",
         password: data.password,
         confirmPassword: data.confirmPassword,
       });
@@ -55,9 +58,9 @@ export function useAuth() {
     },
   });
 
-  // Login mutation
+  // Login mutation (accepts email OR phone)
   const loginMutation = useMutation({
-    mutationFn: async (data: { email: string; password: string }) => {
+    mutationFn: async (data: { emailOrPhone: string; password: string }) => {
       const res = await apiRequest("POST", "/api/auth/login", data);
       return res.json() as Promise<AuthResponse>;
     },

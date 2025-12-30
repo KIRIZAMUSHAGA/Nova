@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 
 const loginSchema = z.object({
-  email: z.string().email("Email invalide"),
+  emailOrPhone: z.string().min(1, "Email ou numéro requis"),
   password: z.string().min(1, "Le mot de passe est requis"),
 });
 
@@ -25,7 +25,7 @@ export default function LoginPage() {
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
+      emailOrPhone: "",
       password: "",
     },
   });
@@ -84,17 +84,16 @@ export default function LoginPage() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
             <FormField
               control={form.control}
-              name="email"
+              name="emailOrPhone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Email ou Téléphone</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="votre@email.com"
-                      type="email"
+                      placeholder="votre@email.com ou +33 6 12 34 56 78"
                       autoComplete="email"
                       {...field}
-                      data-testid="input-email"
+                      data-testid="input-email-or-phone"
                     />
                   </FormControl>
                   <FormMessage />
