@@ -24,10 +24,6 @@ function getOpenAI(): OpenAI {
     const apiKey = getEnv("AI_INTEGRATIONS_OPENAI_API_KEY");
     const baseURL = getEnv("AI_INTEGRATIONS_OPENAI_BASE_URL");
 
-    if (!apiKey || apiKey === "dummy-key") {
-      console.warn("WARNING: AI_INTEGRATIONS_OPENAI_API_KEY is missing or invalid.");
-    }
-
     openai = new OpenAI({
       apiKey: apiKey || "dummy-key",
       baseURL: baseURL || undefined,
@@ -387,7 +383,7 @@ export async function registerRoutes(
           res.write(`data: ${JSON.stringify({ content: "Je génère votre image, un instant... 🎨" })}\n\n`);
 
           const response = await withRetry(() => getOpenAI().images.generate({
-            model: "gpt-4o", // Use a standard model that supports image generation via the integration
+            model: "gpt-image-1",
             prompt: content,
             n: 1,
             size: "1024x1024",
@@ -427,7 +423,7 @@ export async function registerRoutes(
         (async () => {
           try {
             const titleResponse = await withRetry(() => getOpenAI().chat.completions.create({
-              model: "gpt-4o",
+              model: "gpt-5",
               messages: [
                 { role: "system", content: "Summarize the following message into a short, concise title (max 5 words) for a chat conversation. Return ONLY the title." },
                 { role: "user", content }
@@ -449,7 +445,7 @@ export async function registerRoutes(
       res.setHeader("Connection", "keep-alive");
 
       const stream = await withRetry(() => getOpenAI().chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-5",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           ...conversation
