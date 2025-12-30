@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 
 interface User {
@@ -21,12 +21,18 @@ export function useAuth() {
     queryKey: ["/api/auth/me"],
     queryFn: async () => {
       try {
+        const token = localStorage.getItem("authToken");
+        if (!token) return null;
+
         const res = await fetch("/api/auth/me", {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+            Authorization: `Bearer ${token}`,
           },
         });
-        if (res.status === 401) return null;
+        if (res.status === 401) {
+          localStorage.removeItem("authToken");
+          return null;
+        }
         if (!res.ok) throw new Error("Failed to get user");
         return res.json();
       } catch {
@@ -34,6 +40,7 @@ export function useAuth() {
       }
     },
     retry: false,
+    staleTime: 0, // Ensure we always have fresh auth state after signup/login
   });
 
   // Signup mutation (supports email OR phone)
@@ -52,9 +59,10 @@ export function useAuth() {
       });
       return res.json() as Promise<AuthResponse>;
     },
-    onSuccess: (data) => {
-      console.log("Signup success", data);
+    onSuccess: async (data) => {
+      console.log("Signup success, setting token", data.token);
       localStorage.setItem("authToken", data.token);
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     },
   });
 
@@ -64,15 +72,17 @@ export function useAuth() {
       const res = await apiRequest("POST", "/api/auth/login", data);
       return res.json() as Promise<AuthResponse>;
     },
-    onSuccess: (data) => {
-      console.log("Signup success", data);
+    onSuccess: async (data) => {
+      console.log("Login success, setting token", data.token);
       localStorage.setItem("authToken", data.token);
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     },
   });
 
   // Logout function
   const logout = () => {
     localStorage.removeItem("authToken");
+    queryClient.setQueryData(["/api/auth/me"], null);
     setLocation("/welcome");
   };
 

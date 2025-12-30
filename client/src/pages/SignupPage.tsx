@@ -42,13 +42,20 @@ export default function SignupPage() {
 
   const onSubmit = async (data: SignupFormData) => {
     try {
-      await signup.mutateAsync(data);
-      console.log("Signup success, redirecting...");
+      console.log("Starting signup mutation...");
+      const result = await signup.mutateAsync(data);
+      console.log("Signup mutation finished, result:", result);
+      
       toast({
         title: "Succès",
         description: "Compte créé avec succès! Bienvenue.",
       });
-      setLocation("/");
+      
+      // Delay redirection slightly to allow React Query to update state
+      setTimeout(() => {
+        console.log("Navigating to home page");
+        setLocation("/");
+      }, 100);
     } catch (error: any) {
       console.error("Signup error caught in component:", error);
       const message = error.message || "Erreur lors de la création du compte";
