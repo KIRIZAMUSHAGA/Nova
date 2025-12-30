@@ -1,13 +1,22 @@
-import { Thread, Message } from "./mongodb";
+import { Thread, Message, User } from "./mongodb";
 import { type Thread as ThreadType, type Message as MessageType } from "@shared/schema";
+import { type User as UserType } from "@shared/auth-schema";
 
 export interface IStorage {
+  // Threads
   getThreads(): Promise<ThreadType[]>;
   getThread(id: string): Promise<ThreadType | undefined>;
   createThread(thread: any): Promise<ThreadType>;
   updateThreadTitle(id: string, title: string): Promise<void>;
+  
+  // Messages
   getMessages(threadId: string): Promise<MessageType[]>;
   createMessage(message: any): Promise<MessageType>;
+  
+  // Users (Auth)
+  createUser(email: string, passwordHash: string): Promise<UserType>;
+  getUserByEmail(email: string): Promise<UserType | null>;
+  getUserById(id: string): Promise<UserType | null>;
   
   // Replit Chat Integration compatibility
   getAllConversations(): Promise<any[]>;
@@ -36,6 +45,16 @@ export class MongoStorage implements IStorage {
       content: doc.content,
       metadata: doc.metadata || null,
       createdAt: doc.createdAt || new Date(),
+    };
+  }
+
+  private mapUser(doc: any): UserType {
+    return {
+      id: doc._id.toString(),
+      email: doc.email,
+      createdAt: doc.createdAt,
+      plan: doc.plan || "free",
+      quotaUsed: doc.quotaUsed || 0,
     };
   }
 
@@ -99,6 +118,37 @@ export class MongoStorage implements IStorage {
   async deleteConversation(id: string) {
     await Thread.findByIdAndDelete(id);
     await Message.deleteMany({ threadId: id });
+  }
+
+  // Auth Methods
+  async createUser(email: string, passwordHash: string): Promise<UserType> {
+    const user = new User({
+      email: email.toLowerCase(),
+      passwordHash,
+      createdAt: new Date(),
+      plan: "free",
+      quotaUsed: 0,
+    });
+    await user.save();
+    return this.mapUser(user);
+  }
+
+  async getUserByEmail(email: string): Promise<UserType | null> {
+    try {
+      const user = await User.findOne({ email: email.toLowerCase() });
+      return user ? this.mapUser(user) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  async getUserById(id: string): Promise<UserType | null> {
+    try {
+      const user = await User.findById(id);
+      return user ? this.mapUser(user) : null;
+    } catch {
+      return null;
+    }
   }
 }
 

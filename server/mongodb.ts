@@ -28,5 +28,14 @@ const messageSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
+const userSchema = new mongoose.Schema({
+  email: { type: String, required: true, unique: true, lowercase: true },
+  passwordHash: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now },
+  plan: { type: String, default: "free" },
+  quotaUsed: { type: Number, default: 0 },
+});
+
 export const Thread = mongoose.model("Thread", threadSchema);
 export const Message = mongoose.model("Message", messageSchema);
+export const User = mongoose.model("User", userSchema);

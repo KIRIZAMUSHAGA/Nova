@@ -5,6 +5,9 @@ import { api } from "@shared/routes";
 import { z } from "zod";
 import OpenAI from "openai";
 import dns from "dns";
+import { authMiddleware, type AuthRequest } from "./auth-middleware";
+import { hashPassword, comparePassword, generateToken } from "./auth";
+import { signupSchema, loginSchema } from "@shared/auth-schema";
 
 // Fix DNS resolution issues on Replit
 dns.setServers(["8.8.8.8", "1.1.1.1", "8.8.4.4", "208.67.222.222"]);
@@ -81,6 +84,127 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+
+  // ============ AUTH ENDPOINTS ============
+  
+  // Signup endpoint
+  app.post("/api/auth/signup", async (req, res) => {
+    try {
+      const parsed = signupSchema.safeParse(req.body);
+      
+      if (!parsed.success) {
+        res.status(400).json({ 
+          message: "Invalid input",
+          errors: parsed.error.errors
+        });
+        return;
+      }
+
+      const { email, password } = parsed.data;
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        res.status(409).json({ message: "Email already registered" });
+        return;
+      }
+
+      // Hash password and create user
+      const passwordHash = await hashPassword(password);
+      const user = await storage.createUser(email, passwordHash);
+
+      // Generate JWT token
+      const token = generateToken(user.id, user.email);
+
+      res.status(201).json({
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+        },
+      });
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      res.status(500).json({ message: "Failed to create account" });
+    }
+  });
+
+  // Login endpoint
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const parsed = loginSchema.safeParse(req.body);
+      
+      if (!parsed.success) {
+        res.status(400).json({ 
+          message: "Invalid input",
+          errors: parsed.error.errors
+        });
+        return;
+      }
+
+      const { email, password } = parsed.data;
+
+      // Find user
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        res.status(401).json({ message: "Invalid email or password" });
+        return;
+      }
+
+      // Check password
+      const userDoc = await (require("./mongodb")).User.findById(user.id);
+      if (!userDoc) {
+        res.status(401).json({ message: "Invalid email or password" });
+        return;
+      }
+
+      const passwordMatch = await comparePassword(password, userDoc.passwordHash);
+      if (!passwordMatch) {
+        res.status(401).json({ message: "Invalid email or password" });
+        return;
+      }
+
+      // Generate JWT token
+      const token = generateToken(user.id, user.email);
+
+      res.status(200).json({
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+        },
+      });
+    } catch (error: any) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Failed to login" });
+    }
+  });
+
+  // Get current user endpoint (protected)
+  app.get("/api/auth/me", authMiddleware, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user) {
+        res.status(401).json({ message: "Not authenticated" });
+        return;
+      }
+
+      const user = await storage.getUserById(req.user.userId);
+      if (!user) {
+        res.status(404).json({ message: "User not found" });
+        return;
+      }
+
+      res.json({
+        id: user.id,
+        email: user.email,
+      });
+    } catch (error: any) {
+      console.error("Get user error:", error);
+      res.status(500).json({ message: "Failed to get user" });
+    }
+  });
+
+  // ============ THREADS & MESSAGES ENDPOINTS ============
 
   app.post(api.threads.create.path, async (req, res) => {
     try {
