@@ -59,6 +59,57 @@ export class WhatsAppManager {
       console.log(`WhatsApp auth failure for user ${userId}: ${msg}`);
     });
 
+    client.on('message', async (msg) => {
+      // 1. Identification du contact
+      const contactId = msg.from;
+      const content = msg.body;
+
+      // Journaliser le message entrant
+      await storage.createWhatsappLog({
+        userId,
+        contactId,
+        direction: 'incoming',
+        content,
+      });
+
+      // 2. Vérification des règles (Exemple simple : ne pas répondre aux groupes pour l'instant)
+      if (msg.from.endsWith('@g.us')) return;
+
+      try {
+        // 3. Génération de réponse par Nova (via le prompt système)
+        // Note: Dans une version plus avancée, on récupérera l'historique du contact
+        const { getOpenAI, SYSTEM_PROMPT } = await import('../routes');
+        const openai = getOpenAI();
+        const systemPrompt = SYSTEM_PROMPT;
+
+        const response = await openai.chat.completions.create({
+          model: "gpt-5",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content }
+          ],
+        });
+
+        const aiResponse = response.choices[0].message.content;
+
+        if (aiResponse) {
+          // 4. Envoi via la session active
+          await client.sendMessage(contactId, aiResponse);
+
+          // Journaliser la réponse
+          await storage.createWhatsappLog({
+            userId,
+            contactId,
+            direction: 'outgoing',
+            content: aiResponse,
+            aiResponded: true,
+          });
+        }
+      } catch (error) {
+        console.error(`Error processing WhatsApp message for user ${userId}:`, error);
+      }
+    });
+
     try {
       await client.initialize();
       this.instances.set(userId, client);

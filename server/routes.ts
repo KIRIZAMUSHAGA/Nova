@@ -520,3 +520,5 @@ export async function registerRoutes(
 
   return httpServer;
 }
+
+export { SYSTEM_PROMPT, getOpenAI };
