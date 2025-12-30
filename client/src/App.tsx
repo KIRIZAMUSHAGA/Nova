@@ -105,13 +105,18 @@ function AppLayout() {
   const [location] = useLocation();
   const [showSplash, setShowSplash] = React.useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
 
-  // Show splash only on first load
+  // Show splash only on first load, but dismiss it when auth is loaded or after 1.2 seconds
   React.useEffect(() => {
-    const timer = setTimeout(() => setShowSplash(false), 2000);
+    if (!isLoading) {
+      setShowSplash(false);
+      return;
+    }
+    
+    const timer = setTimeout(() => setShowSplash(false), 1200);
     return () => clearTimeout(timer);
-  }, []);
+  }, [isLoading]);
 
   // Hide sidebar for auth pages
   const isAuthPage = ["/welcome", "/login", "/signup"].includes(location);
