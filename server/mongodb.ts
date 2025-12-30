@@ -15,6 +15,7 @@ export const connectDB = async () => {
 };
 
 const threadSchema = new mongoose.Schema({
+  userId: { type: String, required: true },
   title: { type: String, default: null },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },

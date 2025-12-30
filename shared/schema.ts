@@ -4,6 +4,7 @@ import { z } from "zod";
 
 export const threads = pgTable("threads", {
   id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
   title: text("title"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
