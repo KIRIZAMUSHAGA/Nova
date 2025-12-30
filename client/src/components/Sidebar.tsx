@@ -26,6 +26,25 @@ export function Sidebar() {
   const { data: threads, isLoading } = useThreads();
   const createThread = useCreateThread();
   const [isChatsExpanded, setIsChatsExpanded] = React.useState(true);
+  const [deferredPrompt, setDeferredPrompt] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+    }
+  };
 
   const handleNewChat = async () => {
     try {
@@ -165,6 +184,15 @@ export function Sidebar() {
           <Info className="w-4 h-4" />
           À propos de Nova
         </Button>
+        {deferredPrompt && (
+          <Button 
+            onClick={handleInstall}
+            className="w-full justify-start gap-3 h-10 rounded-lg text-sm font-bold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 px-3 mt-2 animate-pulse"
+          >
+            <Rocket className="w-4 h-4" />
+            📲 Installer Nova
+          </Button>
+        )}
         <Button variant="ghost" className="w-full justify-start gap-3 h-10 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 px-3">
           <UserIcon className="w-4 h-4" />
           Le Créateur
