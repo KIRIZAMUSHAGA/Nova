@@ -8,6 +8,7 @@ import dns from "dns";
 import { authMiddleware, type AuthRequest } from "./auth-middleware";
 import { hashPassword, comparePassword, generateToken } from "./auth";
 import { signupSchema, loginSchema } from "@shared/auth-schema";
+import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 
 // Fix DNS resolution issues on Replit
 dns.setServers(["8.8.8.8", "1.1.1.1", "8.8.4.4", "208.67.222.222"]);
@@ -80,6 +81,9 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+
+  // Register object storage routes
+  registerObjectStorageRoutes(app);
 
   // ============ AUTH ENDPOINTS ============
   

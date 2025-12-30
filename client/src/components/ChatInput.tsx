@@ -1,18 +1,36 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Sparkles } from "lucide-react";
+import { Send, Sparkles, Paperclip, X, Image as ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useUpload } from "@/hooks/use-upload";
 
 interface ChatInputProps {
-  onSend: (content: string) => void;
+  onSend: (content: string, attachment?: string) => void;
   disabled?: boolean;
   placeholder?: string;
 }
 
 export function ChatInput({ onSend, disabled, placeholder = "Ask anything..." }: ChatInputProps) {
   const [input, setInput] = React.useState("");
+  const [attachment, setAttachment] = React.useState<string | null>(null);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const { uploadFile, isUploading } = useUpload({
+    onSuccess: (response) => {
+      setAttachment(response.objectPath);
+    },
+  });
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await uploadFile(file);
+    }
+    // Reset file input so same file can be selected again
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   // Auto-resize textarea
   React.useEffect(() => {
@@ -24,10 +42,11 @@ export function ChatInput({ onSend, disabled, placeholder = "Ask anything..." }:
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!input.trim() || disabled) return;
+    if ((!input.trim() && !attachment) || disabled || isUploading) return;
     
-    onSend(input);
+    onSend(input, attachment || undefined);
     setInput("");
+    setAttachment(null);
     
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
@@ -47,35 +66,83 @@ export function ChatInput({ onSend, disabled, placeholder = "Ask anything..." }:
       <div className="max-w-3xl mx-auto relative group">
         <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/30 to-accent/30 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500" />
         
-        <form onSubmit={handleSubmit} className="relative flex items-end gap-2 bg-secondary/50 rounded-2xl border border-white/5 p-2 shadow-xl">
-          <Textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={placeholder}
-            disabled={disabled}
-            className="min-h-[50px] max-h-[200px] resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-4 py-3 text-base placeholder:text-muted-foreground/50 scrollbar-hide"
-            rows={1}
-          />
-          
-          <Button 
-            type="submit" 
-            size="icon"
-            disabled={!input.trim() || disabled}
-            className={cn(
-              "h-10 w-10 mb-1 mr-1 rounded-xl transition-all duration-300",
-              input.trim() 
-                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90 hover:scale-105" 
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
-            )}
-          >
-            {disabled ? (
-              <Sparkles className="w-5 h-5 animate-spin" />
-            ) : (
-              <Send className="w-5 h-5 ml-0.5" />
-            )}
-          </Button>
+        <form onSubmit={handleSubmit} className="relative flex flex-col bg-secondary/50 rounded-2xl border border-white/5 p-2 shadow-xl">
+          {attachment && (
+            <div className="flex items-center gap-2 p-2 mb-2 bg-background/50 rounded-lg border border-border/50 w-fit">
+              {attachment.match(/\.(jpg|jpeg|png|gif|webp)$/i) || attachment.startsWith("/objects/") ? (
+                <div className="relative w-10 h-10 rounded overflow-hidden">
+                  <img src={attachment} alt="Attachment preview" className="w-full h-full object-cover" />
+                </div>
+              ) : (
+                <Paperclip className="w-4 h-4 text-muted-foreground" />
+              )}
+              <span className="text-xs text-muted-foreground truncate max-w-[150px]">
+                {attachment.split("/").pop()}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-5 w-5 rounded-full hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => setAttachment(null)}
+              >
+                <X className="w-3 h-3" />
+              </Button>
+            </div>
+          )}
+
+          <div className="flex items-end gap-2">
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              onChange={handleFileChange}
+              accept="image/*,.pdf,.doc,.docx,.txt"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              disabled={disabled || isUploading}
+              className="h-10 w-10 mb-1 ml-1 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {isUploading ? (
+                <Sparkles className="w-5 h-5 animate-spin" />
+              ) : (
+                <Paperclip className="w-5 h-5" />
+              )}
+            </Button>
+
+            <Textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={placeholder}
+              disabled={disabled || isUploading}
+              className="min-h-[50px] max-h-[200px] resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-2 py-3 text-base placeholder:text-muted-foreground/50 scrollbar-hide"
+              rows={1}
+            />
+            
+            <Button 
+              type="submit" 
+              size="icon"
+              disabled={(!input.trim() && !attachment) || disabled || isUploading}
+              className={cn(
+                "h-10 w-10 mb-1 mr-1 rounded-xl transition-all duration-300",
+                (input.trim() || attachment) && !isUploading
+                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90 hover:scale-105" 
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              )}
+            >
+              {disabled ? (
+                <Sparkles className="w-5 h-5 animate-spin" />
+              ) : (
+                <Send className="w-5 h-5 ml-0.5" />
+              )}
+            </Button>
+          </div>
         </form>
         
         <div className="text-center mt-2">
