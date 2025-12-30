@@ -16,7 +16,6 @@ export class WhatsAppManager {
       puppeteer: {
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
         handleSIGTERM: false,
-        executablePath: '/usr/bin/google-chrome-stable',
       }
     });
 
