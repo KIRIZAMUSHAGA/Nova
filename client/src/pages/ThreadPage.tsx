@@ -1,18 +1,15 @@
 import * as React from "react";
 import { useParams } from "wouter";
-import { Sidebar } from "@/components/Sidebar";
 import { MessageList } from "@/components/MessageList";
 import { ChatInput } from "@/components/ChatInput";
 import { useThread, useMessages, useSendMessage } from "@/hooks/use-threads";
-import { Menu, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function ThreadPage() {
   const params = useParams();
   const threadId = params.id || null;
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   const [streamingMessage, setStreamingMessage] = React.useState<string | null>(null);
 
   const { data: thread, isLoading: isLoadingThread, error: threadError } = useThread(threadId);
@@ -59,53 +56,32 @@ export default function ThreadPage() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background text-foreground font-sans selection:bg-primary/20">
-      <div className="hidden md:block h-full">
-        <Sidebar />
-      </div>
+    <div className="flex-1 flex flex-col h-full relative overflow-hidden bg-background text-foreground font-sans selection:bg-primary/20">
+      <header className="h-16 flex items-center px-4 border-b border-border/50 bg-background/50 backdrop-blur-md sticky top-0 z-10">
+        <div className="flex-1 min-w-0">
+          <h1 className="text-lg font-display font-semibold truncate flex items-center gap-2">
+            {isLoadingThread ? (
+              <div className="h-5 w-32 bg-muted/40 animate-pulse rounded" />
+            ) : (
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">
+                {thread?.title || "New Conversation"}
+              </span>
+            )}
+          </h1>
+        </div>
+      </header>
 
-      <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-        <SheetTrigger asChild>
-          <div />
-        </SheetTrigger>
-        <SheetContent side="left" className="p-0 w-80 bg-background border-r border-border">
-          <Sidebar />
-        </SheetContent>
-      </Sheet>
+      <MessageList 
+        messages={messages} 
+        isLoading={isThinking} 
+        streamingMessage={streamingMessage} 
+      />
 
-      <div className="flex-1 flex flex-col h-full relative">
-        <header className="h-16 flex items-center px-4 border-b border-border/50 bg-background/50 backdrop-blur-md sticky top-0 z-10">
-          <div className="mr-2">
-            <Button variant="ghost" size="icon" className="hover:bg-muted/50" onClick={() => setIsSidebarOpen(true)}>
-              <Menu className="w-5 h-5" />
-            </Button>
-          </div>
-          
-          <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-display font-semibold truncate flex items-center gap-2">
-              {isLoadingThread ? (
-                <div className="h-5 w-32 bg-muted/40 animate-pulse rounded" />
-              ) : (
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">
-                  {thread?.title || "New Conversation"}
-                </span>
-              )}
-            </h1>
-          </div>
-        </header>
-
-        <MessageList 
-          messages={messages} 
-          isLoading={isThinking} 
-          streamingMessage={streamingMessage} 
-        />
-
-        <ChatInput 
-          onSend={handleSend} 
-          disabled={isThinking || !threadId} 
-          placeholder={threadId ? "Ask anything..." : "Select or create a chat to start"}
-        />
-      </div>
+      <ChatInput 
+        onSend={handleSend} 
+        disabled={isThinking || !threadId} 
+        placeholder={threadId ? "Ask anything..." : "Select or create a chat to start"}
+      />
     </div>
   );
 }
