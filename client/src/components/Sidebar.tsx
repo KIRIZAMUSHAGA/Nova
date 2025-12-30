@@ -21,12 +21,24 @@ import {
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
-export function Sidebar() {
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [location, setLocation] = useLocation();
   const { data: threads, isLoading } = useThreads();
   const createThread = useCreateThread();
   const [isChatsExpanded, setIsChatsExpanded] = React.useState(true);
   const [deferredPrompt, setDeferredPrompt] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    // Close sidebar when location changes on mobile
+    if (window.innerWidth < 1024) {
+      onClose();
+    }
+  }, [location]);
 
   React.useEffect(() => {
     const handler = (e: any) => {
@@ -61,7 +73,10 @@ export function Sidebar() {
 
   if (isLoading) {
     return (
-      <div className="w-80 border-r border-border bg-card/30 backdrop-blur-md flex flex-col h-full items-center justify-center p-6">
+      <div className={cn(
+        "fixed inset-y-0 left-0 z-50 w-80 border-r border-border bg-card/30 backdrop-blur-md flex flex-col h-full items-center justify-center p-6 transition-transform duration-300 lg:relative lg:translate-x-0",
+        !isOpen && "-translate-x-full"
+      )}>
         <Loader2 className="h-8 w-8 text-primary animate-spin" />
         <p className="text-sm text-muted-foreground mt-4 animate-pulse">Chargement de Nova...</p>
       </div>
@@ -69,8 +84,25 @@ export function Sidebar() {
   }
 
   return (
-    <div className="w-80 border-r border-border bg-card/30 backdrop-blur-md flex flex-col h-full overflow-hidden">
-      <div className="p-6 border-b border-border/50 relative group cursor-pointer hover:bg-white/5 transition-colors" onClick={() => setLocation("/about")}>
+    <>
+      {/* Overlay for mobile */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+          />
+        )}
+      </AnimatePresence>
+
+      <div className={cn(
+        "fixed inset-y-0 left-0 z-50 w-80 border-r border-border bg-card/95 backdrop-blur-md flex flex-col h-full overflow-hidden transition-transform duration-300 lg:relative lg:translate-x-0 lg:bg-card/30",
+        !isOpen && "-translate-x-full"
+      )}>
+        <div className="p-6 border-b border-border/50 relative group cursor-pointer hover:bg-white/5 transition-colors" onClick={() => setLocation("/about")}>
         <div className="flex items-center gap-4">
           <div className="relative">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center text-white shadow-xl shadow-primary/20 group-hover:scale-105 transition-transform duration-300">
@@ -202,6 +234,6 @@ export function Sidebar() {
           Vision & Futur
         </Button>
       </div>
-    </div>
+    </>
   );
 }

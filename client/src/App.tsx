@@ -10,7 +10,8 @@ import ThreadPage from "@/pages/ThreadPage";
 import AboutPage from "@/pages/AboutPage";
 import { Sidebar } from "@/components/Sidebar";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Menu, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 function SplashScreen() {
   return (
@@ -60,6 +61,7 @@ function Router() {
 
 export default function App() {
   const [showSplash, setShowSplash] = React.useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
 
   React.useEffect(() => {
     const timer = setTimeout(() => setShowSplash(false), 2000);
@@ -74,8 +76,22 @@ export default function App() {
         </AnimatePresence>
         
         <div className="flex h-screen w-full bg-background text-foreground overflow-hidden selection:bg-primary/20">
-          <Sidebar />
+          <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+          
           <main className="flex-1 relative overflow-hidden flex flex-col">
+            {/* Header with Burger Menu */}
+            <header className="h-14 border-b border-border/50 flex items-center px-4 lg:hidden">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                className="hover-elevate"
+              >
+                {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </Button>
+              <h1 className="ml-4 font-display font-bold text-lg">Nova AI</h1>
+            </header>
+
             <Router />
             <Toaster />
           </main>
