@@ -18,10 +18,18 @@ import {
   ChevronDown, 
   ChevronRight,
   Loader2,
-  LogOut
+  LogOut,
+  MessageCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -35,6 +43,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const createThread = useCreateThread();
   const [isChatsExpanded, setIsChatsExpanded] = React.useState(true);
   const [deferredPrompt, setDeferredPrompt] = React.useState<any>(null);
+  const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (window.innerWidth < 1024) {
@@ -130,6 +139,43 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 {createThread.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
                 <span className="font-semibold">{createThread.isPending ? "Initialisation..." : "Nouvelle conversation"}</span>
               </Button>
+
+              <Dialog open={isWhatsAppModalOpen} onOpenChange={setIsWhatsAppModalOpen}>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="outline"
+                    className="w-full justify-start gap-3 h-12 rounded-xl border-green-500/50 bg-green-500/5 text-green-600 hover:bg-green-500/10 hover:text-green-700 transition-all"
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                    <span className="font-semibold">Connecter WhatsApp</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Connecter votre WhatsApp</DialogTitle>
+                  </DialogHeader>
+                  <div className="flex flex-col items-center gap-6 py-6">
+                    <div className="w-48 h-48 bg-white p-2 rounded-xl shadow-inner flex items-center justify-center border-2 border-dashed border-muted">
+                      {/* Placeholder pour le QR Code */}
+                      <div className="text-center space-y-2 text-muted-foreground">
+                        <MessageCircle className="w-12 h-12 mx-auto opacity-20" />
+                        <p className="text-xs px-4">Le QR Code apparaîtra ici une fois le service initialisé</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4 text-sm">
+                      <h4 className="font-bold text-center">Instructions</h4>
+                      <ol className="space-y-2 list-decimal list-inside text-muted-foreground">
+                        <li>Ouvrez WhatsApp sur votre téléphone</li>
+                        <li>Appuyez sur <span className="font-semibold">Menu</span> ou <span className="font-semibold">Réglages</span></li>
+                        <li>Sélectionnez <span className="font-semibold">Appareils liés</span></li>
+                        <li>Appuyez sur <span className="font-semibold">Lier un appareil</span></li>
+                        <li>Scannez le code QR ci-dessus</li>
+                      </ol>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
 
               <div className="grid grid-cols-2 gap-2 pt-2">
                 <Button variant="outline" size="sm" className="justify-start gap-2 h-10 rounded-lg text-xs font-medium border-white/5 hover:bg-white/5">
