@@ -22,8 +22,8 @@ function getEnv(key: string, fallback: string = ""): string {
 let openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
   if (!openai) {
-    const apiKey = getEnv("AI_INTEGRATIONS_OPENAI_API_KEY");
-    const baseURL = getEnv("AI_INTEGRATIONS_OPENAI_BASE_URL");
+    const apiKey = getEnv("REPLIT_AI_MODELS_API_KEY") || getEnv("AI_INTEGRATIONS_OPENAI_API_KEY");
+    const baseURL = getEnv("REPLIT_AI_MODELS_BASE_URL") || getEnv("AI_INTEGRATIONS_OPENAI_BASE_URL");
 
     openai = new OpenAI({
       apiKey: apiKey || "dummy-key",
@@ -509,7 +509,7 @@ export async function registerRoutes(
         (async () => {
           try {
             const titleResponse = await withRetry(() => getOpenAI().chat.completions.create({
-              model: "gpt-5",
+              model: "gpt-4o",
               messages: [
                 { role: "system", content: "Summarize the following message into a short, concise title (max 5 words) for a chat conversation. Return ONLY the title." },
                 { role: "user", content }
@@ -531,7 +531,7 @@ export async function registerRoutes(
       res.setHeader("Connection", "keep-alive");
 
       const stream = await withRetry(() => getOpenAI().chat.completions.create({
-        model: "gpt-5",
+        model: "gpt-4o",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           ...conversation
