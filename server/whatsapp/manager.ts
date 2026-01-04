@@ -82,6 +82,14 @@ export class WhatsAppManager {
             qrCode: null,
           });
           console.log(`WhatsApp client ready for user ${userId}`);
+          
+          // Au cas où 'ready' arrive avant 'qr' (reconnexion auto)
+          clearTimeout(timeoutId);
+          const resolver = this.qrResolvers.get(userId);
+          if (resolver) {
+            this.qrResolvers.delete(userId);
+            resolver.resolve('');
+          }
         });
 
         client.on('disconnected', async (reason) => {
